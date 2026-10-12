@@ -27,7 +27,22 @@ async function requestLocale() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const { meta } = MESSAGES[await requestLocale()];
-  return { title: meta.title, description: meta.description };
+  return {
+    title: meta.title,
+    description: meta.description,
+    // Ikony z paczki wygenerowanej tym narzedziem (public/, zrodlo: branding/favicon-gen/).
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "48x48" },
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      ],
+      apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+    },
+    manifest: "/site.webmanifest",
+    appleWebApp: { title: "favicon" },
+    other: { "msapplication-config": "/browserconfig.xml", "msapplication-TileColor": "#f6b900" },
+  };
 }
 
 export const viewport: Viewport = {

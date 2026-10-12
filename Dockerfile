@@ -56,8 +56,8 @@ FROM base AS builder
 # i wewnatrz kopiowanego katalogu, wiec przenosza sie miedzy stage'ami poprawnie.
 COPY --from=deps /srv/app/node_modules ./node_modules
 COPY app/ ./
-# public/ jest pusty (ikony aplikacji leza w app/app/), a git nie trzyma
-# pustych katalogow — w swiezym klonie go nie ma i COPY w runnerze by padl.
+# public/ trzyma ikony aplikacji; mkdir zostaje jako zabezpieczenie, gdyby
+# katalog kiedys opustoszal — git nie trzyma pustych katalogow, a COPY w runnerze by padl.
 RUN mkdir -p public
 # Testy przed buildem: kodery PNG/ICO, katalog rozmiarow, sanityzacja SVG.
 # Czerwony test zatrzymuje wdrozenie, zanim powstanie obraz.

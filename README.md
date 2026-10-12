@@ -198,12 +198,11 @@ poniżej 0,1% pikseli, głównie na krawędziach cienia).
 ├── docker-compose.yml         # dev: bind mount + hot reload, port 3240
 ├── docker-compose.prod.yml    # produkcja za Traefikiem
 ├── .env                       # nazwa projektu, port, domena (bez sekretów)
+├── branding/favicon-gen/      # paczka ikon aplikacji + brewcode-favicon.json (nie trafia do obrazu)
 └── app/                       # aplikacja Next.js 16
     ├── app/
     │   ├── layout.tsx         # motyw ciemny, pływający badge brewcode
     │   ├── page.tsx
-    │   ├── icon.svg           # favicon samej aplikacji (logo z badge'a)
-    │   ├── apple-icon.png
     │   └── api/health/        # sonda healthchecka
     ├── components/
     │   ├── Generator.tsx      # sidebar, podgląd, siatka plików
@@ -214,6 +213,7 @@ poniżej 0,1% pikseli, głównie na krawędziach cienia).
     │   ├── useHistory.ts      # cofanie / ponawianie ustawień
     │   ├── BrewcodeBadge.tsx
     │   └── ui/                # komponenty shadcn/ui (Radix)
+    ├── public/                # ikony samej aplikacji (favicon, apple-touch, manifest)
     └── lib/
         ├── settings.ts        # model ustawień i grupy paczki
         ├── source.ts          # wczytywanie i normalizacja SVG/rastra

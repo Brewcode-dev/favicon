@@ -6,7 +6,8 @@ Instrukcja dla stacku produkcyjnego z `docker-compose.prod.yml`.
 > To najprostszy możliwy stack: jedna usługa, bez bazy, migracji, kolejek, kont,
 > poczty i zadań cyklicznych. Ikony renderuje, koduje i pakuje do ZIP-a
 > **przeglądarka użytkownika** — plik źródłowy nigdy nie trafia na serwer.
-> Serwer tylko serwuje stronę i `/api/health`.
+> Serwer tylko serwuje stronę i `/api/health` — ta druga jest dostępna wyłącznie
+> od środka kontenera; Traefik nie przepuszcza `/api` z zewnątrz.
 >
 > Konsekwencje: kontener mieści się w 256 MB, **nie ma żadnych danych do
 > backupu** i — inaczej niż w brewcode-maping — **nie jest potrzebny ruch
@@ -85,12 +86,15 @@ więc nie zależy od DNS-u ani od Traefika.
 ```bash
 APP_DOMAIN=favicon.brwcd.dev
 
-# Sonda (spodziewane: {"ok":true})
-curl -s https://$APP_DOMAIN/api/health; echo
+# Sonda od środka kontenera (spodziewane: healthy)
+docker inspect -f '{{.State.Health.Status}}' $(docker compose -f docker-compose.prod.yml ps -q app)
+
+# /api zablokowane z zewnątrz (spodziewane: 404)
+curl -s -o /dev/null -w "api:    %{http_code}\n" https://$APP_DOMAIN/api/health
 
 # Strona i favicon aplikacji (spodziewane: 200 i 200)
 curl -s -o /dev/null -w "strona: %{http_code}\n" https://$APP_DOMAIN/
-curl -s -o /dev/null -w "ikona:  %{http_code}\n" https://$APP_DOMAIN/icon.svg
+curl -s -o /dev/null -w "ikona:  %{http_code}\n" https://$APP_DOMAIN/favicon.svg
 
 # HTTP przekierowuje na HTTPS (spodziewane: 301/308)
 curl -s -o /dev/null -w "http:   %{http_code}\n" http://$APP_DOMAIN/
@@ -223,7 +227,11 @@ etykiety `traefik.http.routers.favicon.middlewares` obok `favicon-security`.
 - Brak bazy, uploadu na serwer i sesji. Jedyne ciasteczko to zapis decyzji
   o zgodach (`brewcode_favicon_consent`, tylko gdy GA jest włączone). Plik wgrany przez
   użytkownika jest czytany wyłącznie w jego przeglądarce.
-- Jedyna trasa serwerowa to `/api/health` — nie przyjmuje danych.
+- Jedyna trasa serwerowa to `/api/health` — nie przyjmuje danych i nie jest
+  wystawiona: reguła routera Traefika ma `!PathPrefix(`/api`)`, więc z zewnątrz
+  dostaje się 404. Healthcheck pyta `127.0.0.1` od środka kontenera.
+- W `app/public/` są tylko pliki ikon strony. Źródłowa paczka (`branding/favicon-gen/`,
+  z plikiem projektu) nie jest serwowana i nie trafia do obrazu (`.dockerignore`).
 - Proces w kontenerze działa jako `node` (uid 1000), nie root.
 - Identyfikator GA jest walidowany (`G-` + litery/cyfry), zanim trafi do skryptu
   inline — błędna wartość w `.env` po prostu wyłącza GA.

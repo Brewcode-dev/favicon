@@ -65,7 +65,10 @@ services:
 
     labels:
       traefik.enable: "true"
-      traefik.http.routers.favicon.rule: Host(`${APP_DOMAIN:?APP_DOMAIN jest wymagany — bez niego regula routingu jest pusta i Traefik nie skieruje ruchu}`)
+      # /api nie wychodzi na zewnatrz — Traefik oddaje 404, zanim zadanie dotrze do
+      # aplikacji. Jedyna trasa to /api/health dla HEALTHCHECK-a, ktory pyta
+      # 127.0.0.1 od srodka kontenera i Traefika nie potrzebuje.
+      traefik.http.routers.favicon.rule: Host(`${APP_DOMAIN:?APP_DOMAIN jest wymagany — bez niego regula routingu jest pusta i Traefik nie skieruje ruchu}`) && !PathPrefix(`/api`)
       # Nazwy entrypointu i resolvera MUSZA zgadzac sie z konfiguracja Traefika
       # dzialajacego na serwerze — to jego ustawienia, nie nasze. Przy
       # niezgodnosci router albo nie powstanie, albo nie dostanie certyfikatu.

@@ -450,7 +450,7 @@ export default function Generator() {
       <aside className="flex w-full shrink-0 flex-col border-r bg-card lg:h-screen lg:w-[340px]">
         <header className="flex items-center gap-3 border-b px-5 py-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.svg" alt="" className="h-9 w-9" />
+          <img src="/favicon.svg" alt="" className="h-9 w-9" />
           <div>
             <h1 className="text-sm font-semibold">{t.header.title}</h1>
             <p className="text-xs text-muted-foreground">favicon · app icon · PWA · Android · iOS</p>
