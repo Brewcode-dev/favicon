@@ -3,18 +3,17 @@
 import { Grid2x2, ImageUp, Plus, Upload } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import type { RenderOptions } from "@/lib/render";
 import type { GroupId, Settings } from "@/lib/settings";
-import { FONTS, type FontId, type IconSource, type TextSpec } from "@/lib/source";
+import type { IconSource, TextSpec } from "@/lib/source";
 import { cn } from "@/lib/utils";
 import ColorPicker from "./ColorPicker";
-import { Segmented, Slider, Toggle } from "./controls";
+import { Slider } from "./controls";
 import { useT } from "./I18n";
 import IconCanvas from "./IconCanvas";
 import LucidePicker from "./LucidePicker";
 import Mockups from "./Mockups";
+import TextControls from "./TextControls";
 
 export type Mode = "simple" | "advanced";
 export type SourceTab = "file" | "text" | "lucide";
@@ -290,26 +289,7 @@ export default function SimpleView({
               </div>
             )}
             {sourceTab === "text" && (
-              <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="simple-text" className="font-normal">
-                    {t.source.text}
-                  </Label>
-                  <Input
-                    id="simple-text"
-                    value={textSpec.text}
-                    maxLength={8}
-                    placeholder={t.source.textPlaceholder}
-                    onChange={(e) => setTextSpec((p) => ({ ...p, text: e.target.value }))}
-                  />
-                </div>
-                <Segmented<FontId>
-                  value={textSpec.font}
-                  onChange={(font) => setTextSpec((p) => ({ ...p, font }))}
-                  options={FONTS.map((f) => ({ value: f, label: <span className="text-xs">{t.source.fonts[f]}</span> }))}
-                />
-                <Toggle label={t.source.bold} checked={textSpec.bold} onChange={(bold) => setTextSpec((p) => ({ ...p, bold }))} />
-              </>
+              <TextControls spec={textSpec} onChange={setTextSpec} idPrefix="simple" />
             )}
             {sourceTab === "lucide" && <LucidePicker selected={source?.lucide} onPick={onPickLucide} />}
           </Card>

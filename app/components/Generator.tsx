@@ -28,7 +28,6 @@ import { buildPackage, downloadBlob, exportTarget, PROJECT_FILE, projectFromJson
 import type { RenderOptions } from "@/lib/render";
 import { DEFAULT_SETTINGS, GROUPS, mergeSettings, SMALL_MAX, type Align, type BgMode, type GroupId, type Settings } from "@/lib/settings";
 import {
-  FONTS,
   hasEmoji,
   SAMPLE_SVG,
   sourceFromDataUrl,
@@ -36,7 +35,8 @@ import {
   sourceFromLucide,
   sourceFromSvgText,
   sourceFromText,
-  type FontId,
+  trimSource,
+  normalizeTextSpec,
   type IconSource,
   type TextSpec,
 } from "@/lib/source";
@@ -48,6 +48,7 @@ import IconCanvas from "./IconCanvas";
 import LucidePicker from "./LucidePicker";
 import Mockups from "./Mockups";
 import SimpleView, { ModeSwitch, type Mode, type SourceTab } from "./SimpleView";
+import TextControls from "./TextControls";
 import TransformOverlay from "./TransformOverlay";
 import { useHistory } from "./useHistory";
 
@@ -194,7 +195,8 @@ export default function Generator() {
   // Domyslne nazwy aplikacji w jezyku interfejsu; reszta ustawien wspolna.
   const [defaults] = useState<Settings>(() => ({ ...DEFAULT_SETTINGS, appName: t.defaults.appName, shortName: t.defaults.shortName }));
   const [settings, setSettings] = useState<Settings>(defaults);
-  const [source, setSource] = useState<IconSource | null>(null);
+  // Zrodlo tak, jak je wczytano (to zapisujemy); `source` nizej to wersja po przycieciu.
+  const [rawSource, setSource] = useState<IconSource | null>(null);
   const [groups, setGroups] = useState<Set<GroupId>>(new Set(ALL_GROUPS));
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
@@ -210,6 +212,20 @@ export default function Generator() {
   const projectInput = useRef<HTMLInputElement>(null);
   const hero = useRef<HTMLDivElement>(null);
   const history = useHistory(settings, setSettings);
+
+  // Przyciecie liczone z rastra raz na zrodlo, nie przy kazdym ruchu suwaka.
+  const [trimmed, setTrimmed] = useState<{ from: IconSource; out: IconSource } | null>(null);
+  useEffect(() => {
+    if (!rawSource || !settings.trim) return;
+    let alive = true;
+    trimSource(rawSource)
+      .then((out) => alive && setTrimmed({ from: rawSource, out }))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [rawSource, settings.trim]);
+  const source = settings.trim && trimmed?.from === rawSource ? trimmed.out : rawSource;
 
   // Siatka kilkudziesieciu canvasow nie musi nadazac za kazdym ruchem suwaka.
   const deferred = useDeferredValue(settings);
@@ -238,7 +254,7 @@ export default function Generator() {
           const src = s.kind === "svg" ? await sourceFromSvgText(s.data, s.name) : await sourceFromDataUrl(s.data, s.name);
           if (s.text) {
             src.text = s.text;
-            setTextSpec(s.text);
+            setTextSpec(normalizeTextSpec(s.text));
             setSourceTab("text");
           } else if (s.lucide) {
             src.lucide = s.lucide;
@@ -258,13 +274,13 @@ export default function Generator() {
   useEffect(() => {
     if (!loaded) return;
     const data: Stored = { settings, groups: [...groups], mode };
-    if (source && source.data.length < MAX_STORED_SOURCE) {
-      data.source = { kind: source.kind, name: source.name, data: source.data, text: source.text, lucide: source.lucide };
+    if (rawSource && rawSource.data.length < MAX_STORED_SOURCE) {
+      data.source = { kind: rawSource.kind, name: rawSource.name, data: rawSource.data, text: rawSource.text, lucide: rawSource.lucide };
     }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {}
-  }, [settings, groups, source, loaded, mode]);
+  }, [settings, groups, rawSource, loaded, mode]);
 
   const importProject = useCallback(
     async (file: File) => {
@@ -274,7 +290,7 @@ export default function Generator() {
       if (p.source) {
         setSource(p.source);
         if (p.source.text) {
-          setTextSpec(p.source.text);
+          setTextSpec(normalizeTextSpec(p.source.text));
           setSourceTab("text");
         } else setSourceTab(p.source.lucide ? "lucide" : "file");
       }
@@ -290,25 +306,28 @@ export default function Generator() {
       const src = await sourceFromFile(file);
       setSourceTab("file");
       setSource(src);
+      // Nowa grafika startuje z ustawionego wyrownania — przesuniecie dotyczylo poprzedniej.
+      patch(() => ({ offsetX: 0, offsetY: 0 }));
       // Raster zwykle ma juz wlasne kolory — przebarwienie wlaczamy tylko dla SVG.
       setSettings((prev) => ({ ...prev, tint: src.kind === "svg" ? prev.tint : false }));
     } catch (e) {
       setError(errorText(e));
     }
-  }, [importProject, errorText]);
+  }, [importProject, errorText, patch]);
 
   const pickLucide = useCallback(
     async (svg: SVGElement, name: string) => {
       setError(null);
       try {
         setSource(await sourceFromLucide(svg, name));
+        patch(() => ({ offsetX: 0, offsetY: 0 }));
         // Ikony Lucide sa jednobarwnymi kreskami — kolor zawsze z przebarwienia.
         setSettings((prev) => ({ ...prev, tint: true }));
       } catch (e) {
         setError(errorText(e));
       }
     },
-    [errorText],
+    [errorText, patch],
   );
 
   // Zrodlo z litery / emoji: generowane od nowa po krotkiej przerwie w pisaniu.
@@ -325,7 +344,7 @@ export default function Generator() {
         // Emoji maja wlasne kolory — przy przejsciu litera ↔ emoji przelaczamy przebarwienie.
         const emoji = hasEmoji(src.text!.text);
         if (emojiRef.current !== emoji) {
-          if (emojiRef.current !== null || !source?.text) setSettings((p) => ({ ...p, tint: !emoji }));
+          if (emojiRef.current !== null || !rawSource?.text) setSettings((p) => ({ ...p, tint: !emoji }));
           emojiRef.current = emoji;
         }
       } catch (e) {
@@ -367,12 +386,14 @@ export default function Generator() {
     return () => window.removeEventListener("paste", onPaste);
   }, [handleFile]);
 
-  // Przeksztalcenia z klawiatury, gdy ikonka jest zaznaczona.
+  // Przeksztalcenia z klawiatury, gdy ikonka jest zaznaczona — tylko w trybie
+  // zaawansowanym, bo w prostym nie ma ramki zaznaczenia.
   useEffect(() => {
-    if (!selected) return;
+    if (!selected || mode !== "advanced") return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
-      if (t.closest("input, textarea, [contenteditable]")) return;
+      // Suwaki Radix, przelaczniki i grupy przyciskow tez obsluguja strzalki — nie przejmujemy ich.
+      if (t.closest('input, textarea, select, [contenteditable], [role="slider"], [role="radio"], [role="switch"], [role="tab"]')) return;
       const step = e.shiftKey ? 5 : 0.5;
       const k = e.key;
       if (k === "Escape") return setSelected(false);
@@ -392,7 +413,7 @@ export default function Generator() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, patch]);
+  }, [selected, patch, mode]);
 
   const download = async () => {
     if (!groups.size) return;
@@ -580,26 +601,7 @@ export default function Generator() {
             </div>
             {sourceTab === "lucide" && <LucidePicker selected={source?.lucide} onPick={pickLucide} />}
             {sourceTab === "text" && (
-              <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="src-text" className="font-normal">
-                    {t.source.text}
-                  </Label>
-                  <Input
-                    id="src-text"
-                    value={textSpec.text}
-                    maxLength={8}
-                    placeholder={t.source.textPlaceholder}
-                    onChange={(e) => setTextSpec((t) => ({ ...t, text: e.target.value }))}
-                  />
-                </div>
-                <Segmented<FontId>
-                  value={textSpec.font}
-                  onChange={(font) => setTextSpec((t) => ({ ...t, font }))}
-                  options={FONTS.map((f) => ({ value: f, label: <span className="text-xs">{t.source.fonts[f]}</span> }))}
-                />
-                <Toggle label={t.source.bold} checked={textSpec.bold} onChange={(bold) => setTextSpec((t) => ({ ...t, bold }))} />
-              </>
+              <TextControls spec={textSpec} onChange={setTextSpec} idPrefix="src" />
             )}
             {source && sourceTab === "file" && (
               <p className="text-xs text-muted-foreground">
@@ -625,6 +627,7 @@ export default function Generator() {
               </button>
             }
           >
+            <Toggle label={t.position.trim} hint={t.position.trimHint} checked={s.trim} onChange={(v) => set("trim", v)} />
             <div className="flex items-center gap-4">
               <AlignGrid x={s.alignX} y={s.alignY} onChange={(x, y) => patch(() => ({ alignX: x, alignY: y, offsetX: 0, offsetY: 0 }))} />
               <div className="space-y-1 text-xs text-muted-foreground">
@@ -809,7 +812,7 @@ export default function Generator() {
                 className="flex-1"
                 onClick={() => {
                   downloadBlob(
-                    new Blob([JSON.stringify(projectToJson(settings, groups, source), null, 2)], { type: "application/json" }),
+                    new Blob([JSON.stringify(projectToJson(settings, groups, rawSource), null, 2)], { type: "application/json" }),
                     PROJECT_FILE,
                   );
                   track("download_project", { source_type: sourceType(source) });

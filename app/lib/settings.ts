@@ -3,6 +3,8 @@ export type BgMode = "solid" | "gradient" | "transparent";
 export type Align = "start" | "center" | "end";
 
 export interface Settings {
+  /** Przyciecie zrodla do zamalowanej zawartosci — pusty margines pliku nie przesuwa srodka. */
+  trim: boolean;
   /** Rozmiar ikonki wzgledem boku plotna (1 = caly bok). */
   scale: number;
   /** Wyrownanie w poziomie (lewo/srodek/prawo) i pionie (gora/srodek/dol). */
@@ -64,6 +66,7 @@ export interface Settings {
 export const SMALL_MAX = 48;
 
 export const DEFAULT_SETTINGS: Settings = {
+  trim: true,
   scale: 0.6,
   alignX: "center",
   alignY: "center",

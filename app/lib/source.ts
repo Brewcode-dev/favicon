@@ -1,10 +1,30 @@
+import { fontDef, isFontId, loadFonts, textToSvg, type FontId } from "./fonts";
 import { AppError } from "./i18n";
+
+export type { FontId } from "./fonts";
+export { FONTS } from "./fonts";
 
 export interface TextSpec {
   text: string;
   font: FontId;
   bold: boolean;
+  /** Odstep miedzy literami w procentach wysokosci kroju; brak = 0 (zapisy sprzed tej opcji). */
+  spacing?: number;
 }
+
+/** Spec z localStorage albo pliku projektu: nieznana czcionka → domyslna, odstep w zakresie. */
+export function normalizeTextSpec(raw: TextSpec): TextSpec {
+  const spacing = Number(raw.spacing);
+  return {
+    text: typeof raw.text === "string" ? raw.text : "",
+    font: isFontId(raw.font) ? raw.font : "sans",
+    bold: raw.bold !== false,
+    spacing: Number.isFinite(spacing) ? Math.min(SPACING_MAX, Math.max(SPACING_MIN, spacing)) : 0,
+  };
+}
+
+export const SPACING_MIN = -20;
+export const SPACING_MAX = 50;
 
 export interface IconSource {
   kind: "svg" | "png";
@@ -145,6 +165,94 @@ export async function sourceFromFile(file: File): Promise<IconSource> {
   return sourceFromDataUrl(dataUrl, file.name);
 }
 
+/* ─────────────────────────── przyciecie do zawartosci ─────────────────────────── */
+
+/** Prostokat w pikselach rastra: [x0, y0, x1, y1] wlacznie. */
+type Bounds = [number, number, number, number];
+
+/** Zakres pikseli z alfa > 8; null, gdy obraz jest pusty. */
+export function inkBounds(data: Uint8ClampedArray, w: number, h: number): Bounds | null {
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 8) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  return x1 < 0 ? null : [x0, y0, x1, y1];
+}
+
+/**
+ * Nowy viewBox obejmujacy tylko zamalowane piksele rastra cw×ch, ktory
+ * odwzorowuje caly stary viewBox. Brzeg o pol piksela rastra w kazda strone,
+ * zeby antyaliasing krawedzi nie zostal uciety.
+ */
+export function cropViewBox(vb: [number, number, number, number], b: Bounds, cw: number, ch: number): [number, number, number, number] {
+  const [vx, vy, vw, vh] = vb;
+  const kx = vw / cw;
+  const ky = vh / ch;
+  const x0 = Math.max(vx, vx + (b[0] - 0.5) * kx);
+  const y0 = Math.max(vy, vy + (b[1] - 0.5) * ky);
+  const x1 = Math.min(vx + vw, vx + (b[2] + 1.5) * kx);
+  const y1 = Math.min(vy + vh, vy + (b[3] + 1.5) * ky);
+  const r = (v: number) => Math.round(v * 1000) / 1000;
+  return [r(x0), r(y0), r(x1 - x0), r(y1 - y0)];
+}
+
+/**
+ * Zrodlo przyciete do faktycznie zamalowanej zawartosci — pusty margines pliku
+ * nie przesuwa wtedy srodka ikonki. SVG zostaje wektorem (zmienia sie tylko
+ * viewBox), raster jest wycinany w oryginalnej rozdzielczosci. Zrodlo bez
+ * marginesu (albo puste) wraca bez zmian.
+ */
+export async function trimSource(src: IconSource): Promise<IconSource> {
+  const S = 1024;
+  const k = S / Math.max(src.width, src.height);
+  const cw = Math.max(1, Math.round(src.width * k));
+  const ch = Math.max(1, Math.round(src.height * k));
+  const c = document.createElement("canvas");
+  c.width = cw;
+  c.height = ch;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
+  ctx.drawImage(src.image, 0, 0, cw, ch);
+  const b = inkBounds(ctx.getImageData(0, 0, cw, ch).data, cw, ch);
+  // Margines ponizej ~2 px rastra nie ma znaczenia — szkoda nowego obrazu.
+  if (!b || (b[0] <= 2 && b[1] <= 2 && b[2] >= cw - 3 && b[3] >= ch - 3)) return src;
+  const extra = { text: src.text, lucide: src.lucide };
+
+  if (src.kind === "svg") {
+    const doc = new DOMParser().parseFromString(src.data, "image/svg+xml");
+    const root = doc.documentElement;
+    const vb = root.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
+    if (!vb || vb.length !== 4 || !vb.every(Number.isFinite)) return src;
+    // Inne proporcje viewBox niz width/height to letterbox — mapowanie pikseli byloby przesuniete.
+    if (Math.abs(vb[2] / vb[3] - src.width / src.height) > 0.01) return src;
+    const nv = cropViewBox(vb as [number, number, number, number], b, cw, ch);
+    root.setAttribute("viewBox", nv.join(" "));
+    root.setAttribute("width", String(nv[2]));
+    root.setAttribute("height", String(nv[3]));
+    const out = await sourceFromSvgText(new XMLSerializer().serializeToString(root), src.name);
+    return { ...out, ...extra };
+  }
+
+  // Raster: granice z podgladu przeliczamy na piksele oryginalu.
+  const sx = src.width / cw;
+  const sy = src.height / ch;
+  const x0 = Math.max(0, Math.floor((b[0] - 1) * sx));
+  const y0 = Math.max(0, Math.floor((b[1] - 1) * sy));
+  const x1 = Math.min(src.width, Math.ceil((b[2] + 2) * sx));
+  const y1 = Math.min(src.height, Math.ceil((b[3] + 2) * sy));
+  const out = document.createElement("canvas");
+  out.width = x1 - x0;
+  out.height = y1 - y0;
+  out.getContext("2d")!.drawImage(src.image, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+  return { ...(await sourceFromDataUrl(out.toDataURL("image/png"), src.name)), ...extra };
+}
+
 export const SAMPLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>`;
 
 /* ─────────────────────────── Lucide ─────────────────────────── */
@@ -176,38 +284,53 @@ export async function sourceFromLucide(svg: SVGElement, name: string): Promise<I
 
 /* ─────────────────────────── litera / emoji ─────────────────────────── */
 
-export type FontId = "sans" | "serif" | "mono" | "rounded";
-
-/** Etykiety czcionek sa w slowniku (`source.fonts`). */
-export const FONTS: FontId[] = ["sans", "serif", "mono", "rounded"];
-
-function fontFamily(id: FontId) {
-  // Fonty z next/font maja zahaszowane nazwy — bierzemy je z zmiennych CSS na <html>.
-  const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+/** Krój systemowy dla rastra (emoji, znaki spoza plikow) — najblizszy rodzaj wybranej czcionki. */
+function fallbackFamily(id: FontId) {
   switch (id) {
-    case "sans":
-      return cssVar("--font-geist-sans") || "system-ui, sans-serif";
-    case "mono":
-      return cssVar("--font-geist-mono") || "ui-monospace, monospace";
     case "serif":
+    case "slab":
       return 'Georgia, "Times New Roman", serif';
-    case "rounded":
-      return 'ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", system-ui, sans-serif';
+    case "mono":
+      return "ui-monospace, monospace";
+    case "script":
+      return "cursive";
+    default:
+      return "system-ui, sans-serif";
   }
 }
 
 export const hasEmoji = (text: string) => /\p{Extended_Pictographic}/u.test(text);
 
 /**
- * Litera albo emoji jako zrodlo: rysujemy na duzym canvasie i przycinamy do
- * faktycznie zamalowanych pikseli, zeby wyrownanie i rozmiar dzialaly tak samo
- * jak dla wgranego pliku. Raster 1024 px wystarcza na najwiekszy cel (1024).
- * Tekst jest czarny — kolor nadaje przebarwienie; emoji zachowuja swoje barwy.
+ * Litera albo emoji jako zrodlo. Litery skladamy z konturow czcionki w SVG,
+ * wiec favicon.svg zostaje wektorem i jest ostry w kazdym rozmiarze. Emoji
+ * (kolorowe glify) i znaki, ktorych nie ma w plikach, rysujemy jak dotad
+ * na canvasie. Tekst jest czarny — kolor nadaje przebarwienie.
  */
 export async function sourceFromText(spec: TextSpec): Promise<IconSource> {
-  const text = spec.text.trim() || "A";
-  const family = fontFamily(spec.font);
-  const weight = spec.bold ? 700 : 400;
+  const norm = normalizeTextSpec(spec);
+  const text = norm.text.trim() || "A";
+  const out = { ...norm, text };
+  const name = `Tekst „${text}”`;
+  if (!hasEmoji(text)) {
+    try {
+      const svg = textToSvg(await loadFonts(norm.font, norm.bold), text, norm.spacing);
+      if (svg) return { ...(await sourceFromSvgText(svg, name)), text: out };
+    } catch {
+      // Brak sieci albo uszkodzony plik — zostaje raster z kroju systemowego.
+    }
+  }
+  return { ...(await rasterText(text, norm)), name, text: out };
+}
+
+/**
+ * Raster: rysujemy na duzym canvasie i przycinamy do faktycznie zamalowanych
+ * pikseli, zeby wyrownanie i rozmiar dzialaly tak samo jak dla wgranego pliku.
+ * 1024 px wystarcza na najwiekszy cel (1024).
+ */
+async function rasterText(text: string, spec: TextSpec): Promise<IconSource> {
+  const family = fallbackFamily(spec.font);
+  const weight = spec.bold && fontDef(spec.font).bold ? 700 : 400;
   const S = 1024;
   const font = `${weight} ${S * 0.7}px ${family}`;
   try {
@@ -221,24 +344,15 @@ export async function sourceFromText(spec: TextSpec): Promise<IconSource> {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#000000";
+  if ("letterSpacing" in ctx) ctx.letterSpacing = `${((spec.spacing ?? 0) / 100) * S * 0.7}px`;
   // Dluzszy tekst zmniejszamy tak, zeby zmiescil sie w szerokosci plotna.
   const width = ctx.measureText(text).width;
   if (width > c.width * 0.9) ctx.font = `${weight} ${S * 0.7 * ((c.width * 0.9) / width)}px ${family}`;
   ctx.fillText(text, c.width / 2, S / 2);
 
-  const { data } = ctx.getImageData(0, 0, c.width, c.height);
-  let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
-  for (let y = 0; y < c.height; y++) {
-    for (let x = 0; x < c.width; x++) {
-      if (data[(y * c.width + x) * 4 + 3] > 8) {
-        if (x < x0) x0 = x;
-        if (x > x1) x1 = x;
-        if (y < y0) y0 = y;
-        if (y > y1) y1 = y;
-      }
-    }
-  }
-  if (x1 < 0) throw new AppError("noGlyph");
+  const ink = inkBounds(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height);
+  if (!ink) throw new AppError("noGlyph");
+  const [x0, y0, x1, y1] = ink;
   const w = x1 - x0 + 1;
   const h = y1 - y0 + 1;
   // Wynik skalujemy tak, by dluzszy bok mial 1024 px.
@@ -249,6 +363,5 @@ export async function sourceFromText(spec: TextSpec): Promise<IconSource> {
   const octx = out.getContext("2d")!;
   octx.imageSmoothingQuality = "high";
   octx.drawImage(c, x0, y0, w, h, 0, 0, out.width, out.height);
-  const src = await sourceFromDataUrl(out.toDataURL("image/png"), `Tekst „${text}”`);
-  return { ...src, text: { ...spec, text } };
+  return sourceFromDataUrl(out.toDataURL("image/png"), text);
 }

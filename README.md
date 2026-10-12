@@ -214,6 +214,7 @@ poniżej 0,1% pikseli, głównie na krawędziach cienia).
     │   ├── BrewcodeBadge.tsx
     │   └── ui/                # komponenty shadcn/ui (Radix)
     ├── public/                # ikony samej aplikacji (favicon, apple-touch, manifest)
+    │   └── fonts/             # czcionki do liter (WOFF z Fontsource, licencje OFL obok plików)
     └── lib/
         ├── settings.ts        # model ustawień i grupy paczki
         ├── source.ts          # wczytywanie i normalizacja SVG/rastra
@@ -225,7 +226,7 @@ poniżej 0,1% pikseli, głównie na krawędziach cienia).
 ```
 
 Stos: Next.js 16 (App Router, `output: "standalone"`), React 19, Tailwind 4,
-shadcn/ui na Radix, lucide-react, JSZip, Vitest. Menedżer pakietów: pnpm.
+shadcn/ui na Radix, lucide-react, opentype.js (litery jako kontury SVG), JSZip, Vitest. Menedżer pakietów: pnpm.
 
 ## Języki
 

@@ -13,11 +13,18 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const SCALE_MIN = 0.1;
 const SCALE_MAX = 1.5;
 
+/**
+ * Prog przeciagania w px. Klikniecie, ktore tylko zaznacza ikonke, zwykle
+ * drgnie o piksel — bez progu dawalo to przesuniecie 0,5% i ikonka po cichu
+ * schodzila ze srodka.
+ */
+const DRAG_THRESHOLD = 4;
+
 /** Obrot do zakresu -180..180, jak suwak w sidebarze. */
 const normDeg = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
 
 type Drag =
-  | { kind: "move"; x: number; y: number; ox: number; oy: number }
+  | { kind: "move"; x: number; y: number; ox: number; oy: number; moved: boolean }
   | { kind: "scale"; cx: number; cy: number; d0: number; s0: number }
   | { kind: "rotate"; cx: number; cy: number };
 
@@ -60,7 +67,7 @@ export default function TransformOverlay({
     e.preventDefault();
     onSelect();
     const c = center();
-    if (kind === "move") drag.current = { kind, x: e.clientX, y: e.clientY, ox: s.offsetX, oy: s.offsetY };
+    if (kind === "move") drag.current = { kind, x: e.clientX, y: e.clientY, ox: s.offsetX, oy: s.offsetY, moved: false };
     else if (kind === "scale")
       drag.current = { kind, cx: c.x, cy: c.y, d0: Math.max(1, Math.hypot(e.clientX - c.x, e.clientY - c.y)), s0: s.scale };
     else drag.current = { kind, cx: c.x, cy: c.y };
@@ -71,6 +78,8 @@ export default function TransformOverlay({
     const d = drag.current;
     if (!d) return;
     if (d.kind === "move") {
+      if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < DRAG_THRESHOLD) return;
+      d.moved = true;
       const step = (v: number) => clamp(Math.round(v * 2) / 2, -50, 50);
       patch(() => ({
         offsetX: step(d.ox + ((e.clientX - d.x) / size) * 100),
