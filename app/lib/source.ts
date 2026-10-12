@@ -16,6 +16,8 @@ export interface IconSource {
   height: number;
   /** Zrodlo wygenerowane z litery / emoji — trzymamy parametry do dalszej edycji. */
   text?: TextSpec;
+  /** Ikona z biblioteki Lucide — nazwa komponentu (np. "Coffee"), do zaznaczenia w wyborze. */
+  lucide?: string;
 }
 
 /* ─────────────────────────── sanityzacja SVG ─────────────────────────── */
@@ -144,6 +146,33 @@ export async function sourceFromFile(file: File): Promise<IconSource> {
 }
 
 export const SAMPLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>`;
+
+/* ─────────────────────────── Lucide ─────────────────────────── */
+
+/**
+ * Ikona Lucide wyrenderowana przez lucide-react jako <svg> w DOM. Komponenty
+ * nie udostepniaja danych sciezek, wiec bierzemy gotowy element: zdejmujemy
+ * klasy i atrybuty dostepnosci, a `currentColor` zamieniamy na czern —
+ * w <img> nie ma koloru tekstu, a barwe i tak nadaje przebarwienie.
+ */
+export function lucideSvgText(svg: SVGElement): string {
+  const el = svg.cloneNode(true) as SVGElement;
+  for (const attr of ["class", "aria-hidden", "focusable", "style"]) el.removeAttribute(attr);
+  for (const node of [el, ...el.querySelectorAll("*")]) {
+    for (const attr of ["stroke", "fill"]) {
+      if (node.getAttribute(attr) === "currentColor") node.setAttribute(attr, "#000000");
+    }
+  }
+  el.setAttribute("width", "24");
+  el.setAttribute("height", "24");
+  el.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  return new XMLSerializer().serializeToString(el);
+}
+
+export async function sourceFromLucide(svg: SVGElement, name: string): Promise<IconSource> {
+  const src = await sourceFromSvgText(lucideSvgText(svg), `${name}.svg`);
+  return { ...src, lucide: name };
+}
 
 /* ─────────────────────────── litera / emoji ─────────────────────────── */
 

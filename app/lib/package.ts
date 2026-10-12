@@ -76,12 +76,12 @@ export interface ProjectJson {
   version: 1;
   settings: Settings;
   groups: GroupId[];
-  source?: { kind: "svg" | "png"; name: string; data: string; text?: TextSpec };
+  source?: { kind: "svg" | "png"; name: string; data: string; text?: TextSpec; lucide?: string };
 }
 
 export function projectToJson(s: Settings, groups: Set<GroupId>, src: IconSource | null): ProjectJson {
   const json: ProjectJson = { format: PROJECT_FORMAT, version: 1, settings: s, groups: [...groups] };
-  if (src) json.source = { kind: src.kind, name: src.name, data: src.data, text: src.text };
+  if (src) json.source = { kind: src.kind, name: src.name, data: src.data, text: src.text, lucide: src.lucide };
   return json;
 }
 
@@ -105,6 +105,7 @@ export async function projectFromJson(raw: unknown): Promise<{
     }
     source = s.kind === "svg" ? await sourceFromSvgText(s.data, s.name ?? "icon.svg") : await sourceFromDataUrl(s.data, s.name ?? "icon.png");
     if (s.text) source.text = s.text;
+    if (s.kind === "svg" && typeof s.lucide === "string") source.lucide = s.lucide;
   }
   return { settings: mergeSettings(p.settings), groups, source };
 }

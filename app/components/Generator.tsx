@@ -33,6 +33,7 @@ import {
   SAMPLE_SVG,
   sourceFromDataUrl,
   sourceFromFile,
+  sourceFromLucide,
   sourceFromSvgText,
   sourceFromText,
   type FontId,
@@ -44,6 +45,7 @@ import { cn } from "@/lib/utils";
 import { ColorField, Section, Segmented, Slider, Toggle } from "./controls";
 import { useErrorText, useLocale, useT } from "./I18n";
 import IconCanvas from "./IconCanvas";
+import LucidePicker from "./LucidePicker";
 import Mockups from "./Mockups";
 import TransformOverlay from "./TransformOverlay";
 import { useHistory } from "./useHistory";
@@ -55,13 +57,13 @@ const MAX_STORED_SOURCE = 2_000_000;
 interface Stored {
   settings: Settings;
   groups: GroupId[];
-  source?: { kind: "svg" | "png"; name: string; data: string; text?: TextSpec };
+  source?: { kind: "svg" | "png"; name: string; data: string; text?: TextSpec; lucide?: string };
 }
 
-type SourceTab = "file" | "text";
+type SourceTab = "file" | "text" | "lucide";
 
-/** Rodzaj zrodla do analityki: plik wektorowy, raster albo litera/emoji. */
-const sourceType = (src: IconSource | null) => (!src ? "none" : src.text ? "text" : src.kind);
+/** Rodzaj zrodla do analityki: plik wektorowy, raster, litera/emoji albo ikona Lucide. */
+const sourceType = (src: IconSource | null) => (!src ? "none" : src.text ? "text" : src.lucide ? "lucide" : src.kind);
 
 const HERO: RenderOptions = { mode: "shape" };
 const HERO_SIZE = 256;
@@ -235,6 +237,9 @@ export default function Generator() {
             src.text = s.text;
             setTextSpec(s.text);
             setSourceTab("text");
+          } else if (s.lucide) {
+            src.lucide = s.lucide;
+            setSourceTab("lucide");
           }
           setSource(src);
         } else setSource(await sourceFromSvgText(SAMPLE_SVG, t.defaults.sampleName));
@@ -251,7 +256,7 @@ export default function Generator() {
     if (!loaded) return;
     const data: Stored = { settings, groups: [...groups] };
     if (source && source.data.length < MAX_STORED_SOURCE) {
-      data.source = { kind: source.kind, name: source.name, data: source.data, text: source.text };
+      data.source = { kind: source.kind, name: source.name, data: source.data, text: source.text, lucide: source.lucide };
     }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -268,7 +273,7 @@ export default function Generator() {
         if (p.source.text) {
           setTextSpec(p.source.text);
           setSourceTab("text");
-        } else setSourceTab("file");
+        } else setSourceTab(p.source.lucide ? "lucide" : "file");
       }
     },
     [history],
@@ -288,6 +293,20 @@ export default function Generator() {
       setError(errorText(e));
     }
   }, [importProject, errorText]);
+
+  const pickLucide = useCallback(
+    async (svg: SVGElement, name: string) => {
+      setError(null);
+      try {
+        setSource(await sourceFromLucide(svg, name));
+        // Ikony Lucide sa jednobarwnymi kreskami — kolor zawsze z przebarwienia.
+        setSettings((prev) => ({ ...prev, tint: true }));
+      } catch (e) {
+        setError(errorText(e));
+      }
+    },
+    [errorText],
+  );
 
   // Zrodlo z litery / emoji: generowane od nowa po krotkiej przerwie w pisaniu.
   const emojiRef = useRef<boolean | null>(null);
@@ -457,10 +476,14 @@ export default function Generator() {
             <Segmented<SourceTab>
               value={sourceTab}
               onChange={setSourceTab}
-              options={[
-                { value: "file", label: t.source.tabFile },
-                { value: "text", label: t.source.tabText },
-              ]}
+              options={(["file", "text", "lucide"] as const).map((value) => ({
+                value,
+                label: (
+                  <span className="text-xs whitespace-nowrap">
+                    {{ file: t.source.tabFile, text: t.source.tabText, lucide: t.source.tabLucide }[value]}
+                  </span>
+                ),
+              }))}
             />
             <div
               className={cn(
@@ -484,7 +507,10 @@ export default function Generator() {
                     src={source.image.src}
                     alt=""
                     // Litera jest czarna (kolor nadaje przebarwienie) — na ciemnym tle by zniknela.
-                    className={cn("max-h-10 max-w-10 object-contain", source.text && !hasEmoji(source.text.text) && "invert")}
+                    className={cn(
+                      "max-h-10 max-w-10 object-contain",
+                      ((source.text && !hasEmoji(source.text.text)) || source.lucide) && "invert",
+                    )}
                   />
                 )}
               </button>
@@ -500,6 +526,7 @@ export default function Generator() {
                 </Button>
               )}
             </div>
+            {sourceTab === "lucide" && <LucidePicker selected={source?.lucide} onPick={pickLucide} />}
             {sourceTab === "text" && (
               <>
                 <div className="space-y-1.5">
