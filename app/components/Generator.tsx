@@ -47,6 +47,7 @@ import { useErrorText, useLocale, useT } from "./I18n";
 import IconCanvas from "./IconCanvas";
 import LucidePicker from "./LucidePicker";
 import Mockups from "./Mockups";
+import SimpleView, { ModeSwitch, type Mode, type SourceTab } from "./SimpleView";
 import TransformOverlay from "./TransformOverlay";
 import { useHistory } from "./useHistory";
 
@@ -58,9 +59,8 @@ interface Stored {
   settings: Settings;
   groups: GroupId[];
   source?: { kind: "svg" | "png"; name: string; data: string; text?: TextSpec; lucide?: string };
+  mode?: Mode;
 }
-
-type SourceTab = "file" | "text" | "lucide";
 
 /** Rodzaj zrodla do analityki: plik wektorowy, raster, litera/emoji albo ikona Lucide. */
 const sourceType = (src: IconSource | null) => (!src ? "none" : src.text ? "text" : src.lucide ? "lucide" : src.kind);
@@ -203,6 +203,8 @@ export default function Generator() {
   const [selected, setSelected] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [sourceTab, setSourceTab] = useState<SourceTab>("file");
+  // Domyslnie widok prosty; pelny panel ustawien to tryb zaawansowany.
+  const [mode, setMode] = useState<Mode>("simple");
   const [textSpec, setTextSpec] = useState<TextSpec>({ text: "B", font: "sans", bold: true });
   const fileInput = useRef<HTMLInputElement>(null);
   const projectInput = useRef<HTMLInputElement>(null);
@@ -229,6 +231,7 @@ export default function Generator() {
       } catch {}
       if (stored?.settings) history.reset(mergeSettings(stored.settings, defaults));
       if (stored?.groups) setGroups(new Set(stored.groups.filter((g) => ALL_GROUPS.includes(g))));
+      if (stored?.mode === "simple" || stored?.mode === "advanced") setMode(stored.mode);
       try {
         const s = stored?.source;
         if (s) {
@@ -254,14 +257,14 @@ export default function Generator() {
 
   useEffect(() => {
     if (!loaded) return;
-    const data: Stored = { settings, groups: [...groups] };
+    const data: Stored = { settings, groups: [...groups], mode };
     if (source && source.data.length < MAX_STORED_SOURCE) {
       data.source = { kind: source.kind, name: source.name, data: source.data, text: source.text, lucide: source.lucide };
     }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {}
-  }, [settings, groups, source, loaded]);
+  }, [settings, groups, source, loaded, mode]);
 
   const importProject = useCallback(
     async (file: File) => {
@@ -430,31 +433,78 @@ export default function Generator() {
   const palette = [s.bgColor, s.bgColor2, s.iconColor, s.borderColor, s.shadowColor, s.darkBgColor, s.darkIconColor, s.themeColor];
   const fileCount = TARGETS.filter((x) => groups.has(x.group)).length;
 
+  // Przeciaganie pliku na okno i ukryte pole wyboru — wspolne dla obu trybow.
+  const dropProps = {
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(true);
+    },
+    onDragLeave: (e: React.DragEvent) => {
+      if (e.currentTarget === e.target) setDragOver(false);
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      handleFile(e.dataTransfer.files[0]);
+    },
+  };
+  const sourceInput = (
+    <input
+      ref={fileInput}
+      type="file"
+      accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg"
+      className="hidden"
+      onChange={(e) => {
+        handleFile(e.target.files?.[0]);
+        e.target.value = "";
+      }}
+    />
+  );
+
+  if (mode === "simple") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col" {...dropProps}>
+        {sourceInput}
+        <SimpleView
+          mode={mode}
+          onMode={setMode}
+          source={source}
+          settings={s}
+          deferred={deferred}
+          set={set}
+          patch={patch}
+          palette={palette}
+          sourceTab={sourceTab}
+          onSourceTab={setSourceTab}
+          textSpec={textSpec}
+          setTextSpec={setTextSpec}
+          onPickFile={() => fileInput.current?.click()}
+          onPickLucide={pickLucide}
+          dragOver={dragOver}
+          groups={groups}
+          setGroups={setGroups}
+          fileCount={fileCount}
+          onDownload={download}
+          progress={progress}
+          error={error}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="flex min-h-0 flex-1 flex-col lg:h-screen lg:flex-row"
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDragOver(true);
-      }}
-      onDragLeave={(e) => {
-        if (e.currentTarget === e.target) setDragOver(false);
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDragOver(false);
-        handleFile(e.dataTransfer.files[0]);
-      }}
-    >
+    <div className="flex min-h-0 flex-1 flex-col lg:h-screen lg:flex-row" {...dropProps}>
+      {sourceInput}
       {/* ───────────── Sidebar ───────────── */}
       <aside className="flex w-full shrink-0 flex-col border-r bg-card lg:h-screen lg:w-[340px]">
-        <header className="flex items-center gap-3 border-b px-5 py-4">
+        <header className="flex flex-wrap items-center gap-3 border-b px-5 py-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-sm font-semibold">{t.header.title}</h1>
             <p className="text-xs text-muted-foreground">favicon · app icon · PWA · Android · iOS</p>
           </div>
+          <ModeSwitch mode={mode} onChange={setMode} className="w-full" />
         </header>
 
         {/* Telefon: pelny podglad jest pod ustawieniami, wiec u gory trzymamy przypiety skrot. */}
@@ -551,16 +601,6 @@ export default function Generator() {
                 <Toggle label={t.source.bold} checked={textSpec.bold} onChange={(bold) => setTextSpec((t) => ({ ...t, bold }))} />
               </>
             )}
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg"
-              className="hidden"
-              onChange={(e) => {
-                handleFile(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
             {source && sourceTab === "file" && (
               <p className="text-xs text-muted-foreground">
                 {source.kind === "svg" ? t.source.vector : t.source.raster} · {Math.round(source.width)}×{Math.round(source.height)}

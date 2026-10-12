@@ -72,7 +72,7 @@ export default function LucidePicker({
         <p className="py-6 text-center text-xs text-muted-foreground">{t.source.lucideLoading}</p>
       ) : (
         <>
-          <div className="grid max-h-64 grid-cols-8 gap-0.5 overflow-y-auto rounded-md border p-1">
+          <div className="grid max-h-64 grid-cols-[repeat(auto-fill,minmax(36px,1fr))] gap-0.5 overflow-y-auto rounded-md border p-1">
             {shown.map((name) => {
               const Icon = icons[name];
               const label = kebab(name);
@@ -96,7 +96,7 @@ export default function LucidePicker({
                 </button>
               );
             })}
-            {!shown.length && <p className="col-span-8 py-4 text-center text-xs text-muted-foreground">{t.source.lucideEmpty}</p>}
+            {!shown.length && <p className="col-span-full py-4 text-center text-xs text-muted-foreground">{t.source.lucideEmpty}</p>}
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
