@@ -426,6 +426,8 @@ export default function Generator() {
   };
 
   const s = settings;
+  // Kolory juz uzyte w projekcie — szybki wybor w kazdym polu koloru.
+  const palette = [s.bgColor, s.bgColor2, s.iconColor, s.borderColor, s.shadowColor, s.darkBgColor, s.darkIconColor, s.themeColor];
   const fileCount = TARGETS.filter((x) => groups.has(x.group)).length;
 
   return (
@@ -622,11 +624,11 @@ export default function Generator() {
               ]}
             />
             {s.bgMode !== "transparent" && (
-              <ColorField label={s.bgMode === "gradient" ? t.background.color1 : t.background.color} value={s.bgColor} onChange={(v) => set("bgColor", v)} />
+              <ColorField swatches={palette} label={s.bgMode === "gradient" ? t.background.color1 : t.background.color} value={s.bgColor} onChange={(v) => set("bgColor", v)} />
             )}
             {s.bgMode === "gradient" && (
               <>
-                <ColorField label={t.background.color2} value={s.bgColor2} onChange={(v) => set("bgColor2", v)} />
+                <ColorField swatches={palette} label={t.background.color2} value={s.bgColor2} onChange={(v) => set("bgColor2", v)} />
                 <Slider label={t.background.angle} value={s.bgAngle} min={0} max={360} unit="°" onChange={(v) => set("bgAngle", v)} />
               </>
             )}
@@ -644,7 +646,7 @@ export default function Generator() {
               checked={s.tint}
               onChange={(v) => set("tint", v)}
             />
-            <ColorField label={t.iconColor.color} value={s.iconColor} disabled={!s.tint} onChange={(v) => set("iconColor", v)} />
+            <ColorField swatches={palette} label={t.iconColor.color} value={s.iconColor} disabled={!s.tint} onChange={(v) => set("iconColor", v)} />
           </Section>
 
           <Section title={t.shape.title}>
@@ -655,7 +657,7 @@ export default function Generator() {
               options={RADIUS_PRESETS.map((p) => ({ value: String(p.value), label: <span className="text-xs">{t.shape.presets[p.key]}</span> }))}
             />
             <Slider label={t.shape.border} value={s.borderWidth} min={0} max={20} step={0.5} unit="%" onChange={(v) => set("borderWidth", v)} />
-            <ColorField label={t.shape.borderColor} value={s.borderColor} disabled={s.borderWidth === 0} onChange={(v) => set("borderColor", v)} />
+            <ColorField swatches={palette} label={t.shape.borderColor} value={s.borderColor} disabled={s.borderWidth === 0} onChange={(v) => set("borderColor", v)} />
             <p className="text-xs text-muted-foreground">
               {t.shape.note}
             </p>
@@ -665,7 +667,7 @@ export default function Generator() {
             <Toggle label={t.shadow.toggle} checked={s.shadow} onChange={(v) => set("shadow", v)} />
             {s.shadow && (
               <>
-                <ColorField label={t.shadow.color} value={s.shadowColor} onChange={(v) => set("shadowColor", v)} />
+                <ColorField swatches={palette} label={t.shadow.color} value={s.shadowColor} onChange={(v) => set("shadowColor", v)} />
                 <Slider label={t.shadow.opacity} value={s.shadowOpacity} min={0} max={100} unit="%" onChange={(v) => set("shadowOpacity", v)} />
                 <Slider label={t.shadow.blur} value={s.shadowBlur} min={0} max={20} step={0.5} unit="%" onChange={(v) => set("shadowBlur", v)} />
                 <Slider label={t.shadow.offsetY} value={s.shadowOffsetY} min={-10} max={10} step={0.5} unit="%" onChange={(v) => set("shadowOffsetY", v)} />
@@ -698,12 +700,13 @@ export default function Generator() {
             {s.darkEnabled && (
               <>
                 <ColorField
+                  swatches={palette}
                   label={t.dark.bg}
                   value={s.darkBgColor}
                   disabled={s.bgMode === "transparent"}
                   onChange={(v) => set("darkBgColor", v)}
                 />
-                <ColorField label={t.dark.icon} value={s.darkIconColor} disabled={!s.tint} onChange={(v) => set("darkIconColor", v)} />
+                <ColorField swatches={palette} label={t.dark.icon} value={s.darkIconColor} disabled={!s.tint} onChange={(v) => set("darkIconColor", v)} />
                 <p className="text-xs text-muted-foreground">
                   {s.bgMode === "transparent" ? t.dark.noBgNote : ""}
                   {!s.tint ? t.dark.needsTintNote : ""}
@@ -726,7 +729,7 @@ export default function Generator() {
               </Label>
               <Input id="app-short" value={s.shortName} onChange={(e) => set("shortName", e.target.value)} />
             </div>
-            <ColorField label={t.app.themeColor} value={s.themeColor} onChange={(v) => set("themeColor", v)} />
+            <ColorField swatches={palette} label={t.app.themeColor} value={s.themeColor} onChange={(v) => set("themeColor", v)} />
           </Section>
 
           <Section

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
+import ColorPicker from "@/components/ColorPicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider as UiSlider } from "@/components/ui/slider";
@@ -172,31 +173,29 @@ export function ColorField({
   value,
   onChange,
   disabled,
+  swatches,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
+  /** Kolory projektu do szybkiego wyboru w okienku. */
+  swatches?: string[];
 }) {
   return (
     <div className={cn("flex items-center justify-between gap-3", disabled && "opacity-50")}>
       <span className="text-sm">{label}</span>
       <span className="flex items-center gap-2">
         <HexInput value={value} onChange={onChange} disabled={disabled} label={label} />
-        <label
-          className="relative h-7 w-7 overflow-hidden rounded-md ring-1 ring-border"
-          style={{ background: value }}
-          title={label}
-        >
-          <input
-            type="color"
-            value={value}
+        <ColorPicker value={value} onChange={onChange} swatches={swatches} label={label}>
+          <button
+            type="button"
             disabled={disabled}
-            aria-label={label}
-            onChange={(e) => onChange(e.target.value)}
-            className="absolute inset-0 h-full w-full opacity-0"
+            title={label}
+            className="h-7 w-7 rounded-md ring-1 ring-border ring-inset transition-transform hover:scale-110 disabled:pointer-events-none data-[state=open]:ring-2 data-[state=open]:ring-primary"
+            style={{ background: value }}
           />
-        </label>
+        </ColorPicker>
       </span>
     </div>
   );
