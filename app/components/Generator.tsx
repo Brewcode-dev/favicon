@@ -7,14 +7,11 @@ import {
   FileUp,
   Image as ImageIcon,
   ImageUp,
-  Moon,
   Move,
   Package,
-  Palette,
   Redo2,
   RotateCcw,
   RotateCw,
-  Smartphone,
   Sparkles,
   SquareRoundCorner,
   // Lucide 1.x nazywa ikony od osi: pionowa linia = odbicie lewo/prawo.
@@ -68,7 +65,7 @@ const MAX_STORED_SOURCE = 2_000_000;
 
 type SourceTab = "file" | "text" | "lucide";
 type Screen = "start" | "editor";
-type Panel = "source" | "position" | "colors" | "shape" | "effects" | "dark" | "app" | "pack";
+type Panel = "source" | "icon" | "background" | "effects" | "pack";
 type CenterView = "canvas" | "files";
 
 interface Stored {
@@ -86,12 +83,9 @@ const ALL_GROUPS = GROUPS;
 
 const PANELS: { id: Panel; icon: LucideIcon }[] = [
   { id: "source", icon: ImageIcon },
-  { id: "position", icon: Move },
-  { id: "colors", icon: Palette },
-  { id: "shape", icon: SquareRoundCorner },
+  { id: "icon", icon: Move },
+  { id: "background", icon: SquareRoundCorner },
   { id: "effects", icon: Sparkles },
-  { id: "dark", icon: Moon },
-  { id: "app", icon: Smartphone },
   { id: "pack", icon: Package },
 ];
 
@@ -266,7 +260,7 @@ export default function Generator() {
   const [sourceTab, setSourceTab] = useState<SourceTab>("file");
   // Bez zapisanego zrodla zaczynamy od ekranu powitalnego.
   const [screen, setScreen] = useState<Screen>("start");
-  const [panel, setPanel] = useState<Panel>("colors");
+  const [panel, setPanel] = useState<Panel>("icon");
   const [center, setCenter] = useState<CenterView>("canvas");
   const [textSpec, setTextSpec] = useState<TextSpec>({ text: "B", font: "sans", bold: true });
   const fileInput = useRef<HTMLInputElement>(null);
@@ -635,49 +629,83 @@ export default function Generator() {
         )}
       </Section>
     ),
-    position: (
-      <Section
-        title={t.position.title}
-        aside={
-          <button
-            type="button"
-            className="text-xs text-primary hover:underline"
-            onClick={() => patch(() => ({ alignX: "center", alignY: "center", offsetX: 0, offsetY: 0, rotation: 0, flipX: false, flipY: false }))}
-          >
-            {t.position.center}
-          </button>
-        }
-      >
-        <Toggle label={t.position.trim} hint={t.position.trimHint} checked={s.trim} onChange={(v) => set("trim", v)} />
-        <div className="flex items-center gap-4">
-          <AlignGrid x={s.alignX} y={s.alignY} onChange={(x, y) => patch(() => ({ alignX: x, alignY: y, offsetX: 0, offsetY: 0 }))} />
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <div className="text-sm text-foreground">
-              {t.align.x[s.alignX]} · {t.align.y[s.alignY]}
-            </div>
-            {(s.offsetX !== 0 || s.offsetY !== 0) && (
-              <button type="button" className="text-primary hover:underline" onClick={() => patch(() => ({ offsetX: 0, offsetY: 0 }))}>
-                {t.position.clearOffset}
-              </button>
-            )}
-            <div>{t.position.hint}</div>
+    icon: (
+      <>
+        <Section title={t.iconColor.title}>
+          <div role="group" aria-label={t.editor.quick} className="flex flex-wrap items-center gap-2">
+            {ICON_SWATCHES.map((c) => (
+              <Swatch key={c} color={c} label={c} active={s.tint && s.iconColor === c} onClick={() => patch(() => ({ tint: true, iconColor: c }))} />
+            ))}
+            <CustomSwatch
+              value={s.iconColor}
+              active={s.tint && !ICON_SWATCHES.includes(s.iconColor)}
+              label={t.editor.custom}
+              palette={palette}
+              onChange={(c) => patch(() => ({ tint: true, iconColor: c }))}
+            />
+            <button
+              type="button"
+              aria-pressed={!s.tint}
+              onClick={() => set("tint", false)}
+              className={cn(
+                "h-8 rounded-lg border px-3 text-xs transition-colors",
+                !s.tint ? "border-primary bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t.editor.original}
+            </button>
           </div>
-        </div>
-        <Slider label={t.position.size} value={Math.round(s.scale * 100)} min={10} max={150} unit="%" onChange={(v) => set("scale", v / 100)} />
-        <Slider
-          label={t.position.margin}
-          value={s.margin}
-          min={0}
-          max={40}
-          step={0.5}
-          unit="%"
-          disabled={s.alignX === "center" && s.alignY === "center"}
-          onChange={(v) => set("margin", v)}
-        />
-        <Slider label={t.position.rotation} value={s.rotation} min={-180} max={180} unit="°" onChange={(v) => set("rotation", v)} />
-      </Section>
+          <Toggle
+            label={t.iconColor.tint}
+            hint={source?.kind === "png" ? t.iconColor.tintRaster : t.iconColor.tintSvg}
+            checked={s.tint}
+            onChange={(v) => set("tint", v)}
+          />
+          <ColorField swatches={palette} label={t.iconColor.color} value={s.iconColor} disabled={!s.tint} onChange={(v) => set("iconColor", v)} />
+        </Section>
+        <Section
+          title={t.position.title}
+          aside={
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline"
+              onClick={() => patch(() => ({ alignX: "center", alignY: "center", offsetX: 0, offsetY: 0, rotation: 0, flipX: false, flipY: false }))}
+            >
+              {t.position.center}
+            </button>
+          }
+        >
+          <Toggle label={t.position.trim} hint={t.position.trimHint} checked={s.trim} onChange={(v) => set("trim", v)} />
+          <div className="flex items-center gap-4">
+            <AlignGrid x={s.alignX} y={s.alignY} onChange={(x, y) => patch(() => ({ alignX: x, alignY: y, offsetX: 0, offsetY: 0 }))} />
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <div className="text-sm text-foreground">
+                {t.align.x[s.alignX]} · {t.align.y[s.alignY]}
+              </div>
+              {(s.offsetX !== 0 || s.offsetY !== 0) && (
+                <button type="button" className="text-primary hover:underline" onClick={() => patch(() => ({ offsetX: 0, offsetY: 0 }))}>
+                  {t.position.clearOffset}
+                </button>
+              )}
+              <div>{t.position.hint}</div>
+            </div>
+          </div>
+          <Slider label={t.position.size} value={Math.round(s.scale * 100)} min={10} max={150} unit="%" onChange={(v) => set("scale", v / 100)} />
+          <Slider
+            label={t.position.margin}
+            value={s.margin}
+            min={0}
+            max={40}
+            step={0.5}
+            unit="%"
+            disabled={s.alignX === "center" && s.alignY === "center"}
+            onChange={(v) => set("margin", v)}
+          />
+          <Slider label={t.position.rotation} value={s.rotation} min={-180} max={180} unit="°" onChange={(v) => set("rotation", v)} />
+        </Section>
+      </>
     ),
-    colors: (
+    background: (
       <>
         <Section title={t.background.title}>
           <div role="group" aria-label={t.editor.quick} className="flex flex-wrap gap-2">
@@ -723,53 +751,19 @@ export default function Generator() {
           )}
           {s.bgMode === "transparent" && <p className="text-xs text-muted-foreground">{t.background.transparentNote}</p>}
         </Section>
-        <Section title={t.iconColor.title}>
-          <div role="group" aria-label={t.editor.quick} className="flex flex-wrap items-center gap-2">
-            {ICON_SWATCHES.map((c) => (
-              <Swatch key={c} color={c} label={c} active={s.tint && s.iconColor === c} onClick={() => patch(() => ({ tint: true, iconColor: c }))} />
-            ))}
-            <CustomSwatch
-              value={s.iconColor}
-              active={s.tint && !ICON_SWATCHES.includes(s.iconColor)}
-              label={t.editor.custom}
-              palette={palette}
-              onChange={(c) => patch(() => ({ tint: true, iconColor: c }))}
-            />
-            <button
-              type="button"
-              aria-pressed={!s.tint}
-              onClick={() => set("tint", false)}
-              className={cn(
-                "h-8 rounded-lg border px-3 text-xs transition-colors",
-                !s.tint ? "border-primary bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t.editor.original}
-            </button>
-          </div>
-          <Toggle
-            label={t.iconColor.tint}
-            hint={source?.kind === "png" ? t.iconColor.tintRaster : t.iconColor.tintSvg}
-            checked={s.tint}
-            onChange={(v) => set("tint", v)}
+        <Section title={t.shape.title}>
+          <Segmented<string>
+            value={String(s.radius)}
+            onChange={(v) => set("radius", Number(v))}
+            className="w-full"
+            options={RADIUS_PRESETS.map((p) => ({ value: String(p.value), label: <span className="text-xs">{t.shape.presets[p.key]}</span> }))}
           />
-          <ColorField swatches={palette} label={t.iconColor.color} value={s.iconColor} disabled={!s.tint} onChange={(v) => set("iconColor", v)} />
+          <Slider label={t.shape.radius} value={s.radius} min={0} max={50} step={0.5} unit="%" onChange={(v) => set("radius", v)} />
+          <Slider label={t.shape.border} value={s.borderWidth} min={0} max={20} step={0.5} unit="%" onChange={(v) => set("borderWidth", v)} />
+          <ColorField swatches={palette} label={t.shape.borderColor} value={s.borderColor} disabled={s.borderWidth === 0} onChange={(v) => set("borderColor", v)} />
+          <p className="text-xs text-muted-foreground">{t.shape.note}</p>
         </Section>
       </>
-    ),
-    shape: (
-      <Section title={t.shape.title}>
-        <Segmented<string>
-          value={String(s.radius)}
-          onChange={(v) => set("radius", Number(v))}
-          className="w-full"
-          options={RADIUS_PRESETS.map((p) => ({ value: String(p.value), label: <span className="text-xs">{t.shape.presets[p.key]}</span> }))}
-        />
-        <Slider label={t.shape.radius} value={s.radius} min={0} max={50} step={0.5} unit="%" onChange={(v) => set("radius", v)} />
-        <Slider label={t.shape.border} value={s.borderWidth} min={0} max={20} step={0.5} unit="%" onChange={(v) => set("borderWidth", v)} />
-        <ColorField swatches={palette} label={t.shape.borderColor} value={s.borderColor} disabled={s.borderWidth === 0} onChange={(v) => set("borderColor", v)} />
-        <p className="text-xs text-muted-foreground">{t.shape.note}</p>
-      </Section>
     ),
     effects: (
       <>
@@ -793,46 +787,27 @@ export default function Generator() {
             </>
           )}
         </Section>
+        <Section title={t.dark.title}>
+          <Toggle label={t.dark.toggle} hint={t.dark.hint} checked={s.darkEnabled} onChange={(v) => set("darkEnabled", v)} />
+          {s.darkEnabled && (
+            <>
+              <ColorField
+                swatches={palette}
+                label={t.dark.bg}
+                value={s.darkBgColor}
+                disabled={s.bgMode === "transparent"}
+                onChange={(v) => set("darkBgColor", v)}
+              />
+              <ColorField swatches={palette} label={t.dark.icon} value={s.darkIconColor} disabled={!s.tint} onChange={(v) => set("darkIconColor", v)} />
+              <p className="text-xs text-muted-foreground">
+                {s.bgMode === "transparent" ? t.dark.noBgNote : ""}
+                {!s.tint ? t.dark.needsTintNote : ""}
+                {t.dark.iosNote}
+              </p>
+            </>
+          )}
+        </Section>
       </>
-    ),
-    dark: (
-      <Section title={t.dark.title}>
-        <Toggle label={t.dark.toggle} hint={t.dark.hint} checked={s.darkEnabled} onChange={(v) => set("darkEnabled", v)} />
-        {s.darkEnabled && (
-          <>
-            <ColorField
-              swatches={palette}
-              label={t.dark.bg}
-              value={s.darkBgColor}
-              disabled={s.bgMode === "transparent"}
-              onChange={(v) => set("darkBgColor", v)}
-            />
-            <ColorField swatches={palette} label={t.dark.icon} value={s.darkIconColor} disabled={!s.tint} onChange={(v) => set("darkIconColor", v)} />
-            <p className="text-xs text-muted-foreground">
-              {s.bgMode === "transparent" ? t.dark.noBgNote : ""}
-              {!s.tint ? t.dark.needsTintNote : ""}
-              {t.dark.iosNote}
-            </p>
-          </>
-        )}
-      </Section>
-    ),
-    app: (
-      <Section title={t.app.title}>
-        <div className="space-y-1.5">
-          <Label htmlFor="app-name" className="font-normal">
-            {t.app.name}
-          </Label>
-          <Input id="app-name" value={s.appName} onChange={(e) => set("appName", e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="app-short" className="font-normal">
-            {t.app.shortName}
-          </Label>
-          <Input id="app-short" value={s.shortName} onChange={(e) => set("shortName", e.target.value)} />
-        </div>
-        <ColorField swatches={palette} label={t.app.themeColor} value={s.themeColor} onChange={(v) => set("themeColor", v)} />
-      </Section>
     ),
     pack: (
       <>
@@ -858,6 +833,21 @@ export default function Generator() {
               <span className="font-mono text-xs text-muted-foreground">{TARGETS.filter((x) => x.group === g).length}</span>
             </div>
           ))}
+        </Section>
+        <Section title={t.app.title}>
+          <div className="space-y-1.5">
+            <Label htmlFor="app-name" className="font-normal">
+              {t.app.name}
+            </Label>
+            <Input id="app-name" value={s.appName} onChange={(e) => set("appName", e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="app-short" className="font-normal">
+              {t.app.shortName}
+            </Label>
+            <Input id="app-short" value={s.shortName} onChange={(e) => set("shortName", e.target.value)} />
+          </div>
+          <ColorField swatches={palette} label={t.app.themeColor} value={s.themeColor} onChange={(v) => set("themeColor", v)} />
         </Section>
         <Section title={t.project.title}>
           <div className="flex gap-2">
@@ -990,10 +980,22 @@ export default function Generator() {
                   className={cn("flex h-[360px] w-[360px] max-w-full items-center justify-center rounded-2xl shadow-lg", PREVIEW_BG[previewBg])}
                   onPointerDown={() => setSelected(false)}
                 >
-                  <div className="relative" style={{ width: HERO_SIZE, height: HERO_SIZE }}>
+                  {/* Klik w kafelek poza ikonka otwiera Tlo; klik w ikonke (Overlay) — panel Ikona. */}
+                  <div
+                    className="relative cursor-pointer"
+                    style={{ width: HERO_SIZE, height: HERO_SIZE }}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      setSelected(false);
+                      setPanel("background");
+                    }}
+                  >
                     <IconCanvas size={512} display={HERO_SIZE} src={source} settings={s} opts={HERO} />
                     {source && (
-                      <TransformOverlay size={HERO_SIZE} src={source} s={s} selected={selected} onSelect={() => setSelected(true)} patch={patch} />
+                      <TransformOverlay size={HERO_SIZE} src={source} s={s} selected={selected} onSelect={() => {
+                          setSelected(true);
+                          setPanel("icon");
+                        }} patch={patch} />
                     )}
                   </div>
                 </div>
