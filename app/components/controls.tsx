@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import ColorPicker from "@/components/ColorPicker";
 import { Input } from "@/components/ui/input";
@@ -221,6 +222,68 @@ export function Toggle({
       </label>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </div>
+  );
+}
+
+export function Swatch({
+  color,
+  active,
+  label,
+  onClick,
+  className,
+}: {
+  color: string;
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "h-8 w-8 rounded-lg ring-1 ring-border ring-inset transition-transform hover:scale-110",
+        active && "ring-2 ring-foreground ring-offset-2 ring-offset-card",
+        className,
+      )}
+      style={{ background: color }}
+    />
+  );
+}
+
+/** Wlasny kolor: kafelek "+" otwierajacy pelny picker. */
+export function CustomSwatch({
+  value,
+  active,
+  label,
+  palette,
+  onChange,
+}: {
+  value: string;
+  active: boolean;
+  label: string;
+  palette: string[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <ColorPicker value={value} onChange={onChange} swatches={palette} label={label} side="bottom">
+      <button
+        type="button"
+        title={label}
+        aria-label={label}
+        className={cn(
+          "flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-transform hover:scale-110",
+          active ? "ring-2 ring-foreground ring-offset-2 ring-offset-card" : "border border-dashed border-muted-foreground/60",
+        )}
+        style={active ? { background: value } : undefined}
+      >
+        {!active && <Plus className="h-4 w-4" />}
+      </button>
+    </ColorPicker>
   );
 }
 

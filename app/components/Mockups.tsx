@@ -62,7 +62,16 @@ function Tab({ src, s, opts, dark, title }: { src: IconSource | null; s: Setting
   );
 }
 
-export default function Mockups({ src, s }: { src: IconSource | null; s: Settings }) {
+export default function Mockups({
+  src,
+  s,
+  className = "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3",
+}: {
+  src: IconSource | null;
+  s: Settings;
+  /** Uklad siatki — w waskiej kolumnie edytora jedna kolumna. */
+  className?: string;
+}) {
   const t = useT();
   const name = s.shortName || t.mockups.appName;
   // Podglad wariantu ciemnego favicon.svg: te same reguly co w buildSvg —
@@ -82,7 +91,7 @@ export default function Mockups({ src, s }: { src: IconSource | null; s: Setting
   );
   const title = s.appName || t.mockups.siteTitle;
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className={className}>
       <Card
         title={t.mockups.tab}
         note={s.darkEnabled ? t.mockups.tabNoteDark : t.mockups.tabNote}
