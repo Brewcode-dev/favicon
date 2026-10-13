@@ -575,6 +575,7 @@ export default function Generator() {
         {inputs}
         <StartScreen
           dragOver={dragOver}
+          fileCount={TARGETS.length}
           onPickFile={() => fileInput.current?.click()}
           onPickProject={() => projectInput.current?.click()}
           onLetter={startLetter}
