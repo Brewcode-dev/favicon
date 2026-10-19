@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, type PointerEvent as RPointerEvent } from "react";
+import { useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import { iconBox } from "@/lib/render";
 import type { Settings } from "@/lib/settings";
+import { snapAxis } from "@/lib/snap";
 import type { IconSource } from "@/lib/source";
 import { cn } from "@/lib/utils";
 import { useT } from "./I18n";
@@ -24,14 +25,15 @@ const DRAG_THRESHOLD = 4;
 const normDeg = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
 
 type Drag =
-  | { kind: "move"; x: number; y: number; ox: number; oy: number; moved: boolean }
+  | { kind: "move"; x: number; y: number; cx0: number; cy0: number; moved: boolean }
   | { kind: "scale"; cx: number; cy: number; d0: number; s0: number }
   | { kind: "rotate"; cx: number; cy: number };
 
 /**
  * Ramka przeksztalcen nad duzym podgladem, jak w edytorze grafiki:
  * przeciaganie srodka przesuwa, narozniki skaluja (rowno, od srodka),
- * uchwyt nad ramka obraca (z Shiftem co 15°).
+ * uchwyt nad ramka obraca (z Shiftem co 15°). Przy przesuwaniu ikonka
+ * przykleja sie do punktow siatki wyrownania (Alt wylacza) i pokazuje linie.
  *
  * `size` to bok podgladu w pikselach CSS — geometria ramki liczona jest tym
  * samym `iconBox`, ktorym renderer rysuje ikonke, wiec ramka trzyma sie
@@ -55,6 +57,8 @@ export default function TransformOverlay({
   const t = useT();
   const root = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
+  // Linie pomocnicze przyciagania (px w ukladzie podgladu), tylko w trakcie przesuwania.
+  const [guides, setGuides] = useState<{ x?: number; y?: number } | null>(null);
   const { w, h, cx, cy } = iconBox(src, s, size, 1);
 
   const center = () => {
@@ -67,7 +71,7 @@ export default function TransformOverlay({
     e.preventDefault();
     onSelect();
     const c = center();
-    if (kind === "move") drag.current = { kind, x: e.clientX, y: e.clientY, ox: s.offsetX, oy: s.offsetY, moved: false };
+    if (kind === "move") drag.current = { kind, x: e.clientX, y: e.clientY, cx0: cx, cy0: cy, moved: false };
     else if (kind === "scale")
       drag.current = { kind, cx: c.x, cy: c.y, d0: Math.max(1, Math.hypot(e.clientX - c.x, e.clientY - c.y)), s0: s.scale };
     else drag.current = { kind, cx: c.x, cy: c.y };
@@ -80,11 +84,11 @@ export default function TransformOverlay({
     if (d.kind === "move") {
       if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < DRAG_THRESHOLD) return;
       d.moved = true;
-      const step = (v: number) => clamp(Math.round(v * 2) / 2, -50, 50);
-      patch(() => ({
-        offsetX: step(d.ox + ((e.clientX - d.x) / size) * 100),
-        offsetY: step(d.oy + ((e.clientY - d.y) / size) * 100),
-      }));
+      const snap = !e.altKey;
+      const ax = snapAxis(d.cx0 + e.clientX - d.x, w, size, s.margin, snap);
+      const ay = snapAxis(d.cy0 + e.clientY - d.y, h, size, s.margin, snap);
+      setGuides({ x: ax.guide, y: ay.guide });
+      patch(() => ({ alignX: ax.align, offsetX: ax.offset, alignY: ay.align, offsetY: ay.offset }));
     } else if (d.kind === "scale") {
       const dist = Math.hypot(e.clientX - d.cx, e.clientY - d.cy);
       patch(() => ({ scale: clamp(Math.round(d.s0 * (dist / d.d0) * 100) / 100, SCALE_MIN, SCALE_MAX) }));
@@ -102,6 +106,7 @@ export default function TransformOverlay({
 
   const end = () => {
     drag.current = null;
+    setGuides(null);
   };
 
   const handlers = { onPointerMove: move, onPointerUp: end, onPointerCancel: end };
@@ -109,6 +114,12 @@ export default function TransformOverlay({
 
   return (
     <div ref={root} className="pointer-events-none absolute inset-0">
+      {guides?.x !== undefined && (
+        <span className="absolute -top-6 -bottom-6 w-[1.5px] bg-pink-500" style={{ left: guides.x - 0.75 }} />
+      )}
+      {guides?.y !== undefined && (
+        <span className="absolute -right-6 -left-6 h-[1.5px] bg-pink-500" style={{ top: guides.y - 0.75 }} />
+      )}
       <div
         className="pointer-events-none absolute"
         style={{

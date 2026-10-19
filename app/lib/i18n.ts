@@ -231,7 +231,7 @@ const pl = {
     light: "Jasne",
     dark: "Czarne",
     // Tekst z klawiszami <kbd> — fragmenty skladane w komponencie.
-    help1: "Kliknij ikonkę, żeby ją zaznaczyć: przeciągnij, by przesunąć, narożniki skalują, uchwyt u góry obraca (Shift — co 15°). Z klawiatury: strzałki, ",
+    help1: "Kliknij ikonkę, żeby ją zaznaczyć: przeciągnij, by przesunąć (przykleja się do środka i krawędzi, Alt wyłącza), narożniki skalują, uchwyt u góry obraca (Shift — co 15°). Z klawiatury: strzałki, ",
     help2: ".",
   },
   overlay: { icon: "Ikonka — przeciągnij, aby przesunąć", scale: "Skaluj", rotate: "Obróć", rotateTitle: "Obróć (Shift: co 15°)" },
@@ -503,7 +503,7 @@ const en: Messages = {
     checker: "Checkerboard",
     light: "Light",
     dark: "Black",
-    help1: "Click the icon to select it: drag to move, corners scale, the top handle rotates (Shift — 15° steps). Keyboard: arrows, ",
+    help1: "Click the icon to select it: drag to move (snaps to the center and edges, Alt turns it off), corners scale, the top handle rotates (Shift — 15° steps). Keyboard: arrows, ",
     help2: ".",
   },
   overlay: { icon: "Icon — drag to move", scale: "Scale", rotate: "Rotate", rotateTitle: "Rotate (Shift: 15° steps)" },
