@@ -24,7 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useDeferredValue, useEffect, useRef, useState, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -602,10 +602,12 @@ export default function Generator() {
           }))}
         />
         {sourceTab === "file" && (
-          <div
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
             className={cn(
-              "flex items-center gap-3 rounded-lg border-2 border-dashed p-2.5 transition-colors",
-              dragOver ? "border-primary bg-primary/10" : "border-border",
+              "group flex items-center gap-3 rounded-lg border-2 border-dashed p-2.5 text-left transition-colors",
+              dragOver ? "border-primary bg-primary/10" : "border-border hover:border-primary/70",
             )}
           >
             <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-md", CHECKER)}>
@@ -615,10 +617,10 @@ export default function Generator() {
               <div className="truncate font-medium">{source && !source.text && !source.lucide ? source.name : t.source.noFile}</div>
               <div className="text-xs text-muted-foreground">{t.source.dropHint}</div>
             </div>
-            <Button type="button" size="sm" variant="secondary" onClick={() => fileInput.current?.click()}>
+            <span className={buttonVariants({ size: "sm", variant: "secondary", className: "group-hover:bg-secondary/80" })}>
               <ImageUp /> {t.source.change}
-            </Button>
-          </div>
+            </span>
+          </button>
         )}
         {sourceTab === "lucide" && <LucidePicker selected={source?.lucide} onPick={pickLucide} />}
         {sourceTab === "text" && <TextControls spec={textSpec} onChange={setTextSpec} idPrefix="src" />}

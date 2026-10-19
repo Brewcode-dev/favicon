@@ -2,7 +2,7 @@
 
 import { ArrowRight, FolderOpen, Grid2x2, ShieldCheck, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { RenderOptions } from "@/lib/render";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 import { SAMPLE_SVG, sourceFromSvgText, sourceFromText, type IconSource } from "@/lib/source";
@@ -115,10 +115,13 @@ export default function StartScreen({
             </h1>
             <p className="max-w-[480px] text-base leading-relaxed text-muted-foreground">{t.start.lead}</p>
 
-            <div
+            {/* Caly box jest przyciskiem; "Wybierz" to tylko wizualna podpowiedz. */}
+            <button
+              type="button"
+              onClick={onPickFile}
               className={cn(
-                "flex items-center gap-3.5 rounded-2xl border border-dashed p-3.5 transition-colors",
-                dragOver ? "border-primary bg-primary/10" : "border-muted-foreground/40 bg-card",
+                "group flex items-center gap-3.5 rounded-2xl border border-dashed p-3.5 text-left transition-colors",
+                dragOver ? "border-primary bg-primary/10" : "border-muted-foreground/40 bg-card hover:border-primary/70",
               )}
             >
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/10 text-primary">
@@ -128,10 +131,10 @@ export default function StartScreen({
                 <span className="block text-[15px] font-semibold">{t.start.dropTitle}</span>
                 <span className="block text-[13px] text-muted-foreground">{t.start.dropFormats}</span>
               </span>
-              <Button type="button" className="h-10 rounded-lg px-4 font-semibold" onClick={onPickFile}>
+              <span className={buttonVariants({ className: "h-10 rounded-lg px-4 font-semibold group-hover:bg-primary/90" })}>
                 {t.start.choose}
-              </Button>
-            </div>
+              </span>
+            </button>
 
             <div className="grid gap-2.5 sm:grid-cols-2">
               <button
