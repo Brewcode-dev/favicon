@@ -48,3 +48,27 @@ describe("textToSvg", () => {
     expect(textToSvg(load("sans"), "   ")).toBeNull();
   });
 });
+
+describe("textToSvg ze stylami liter", () => {
+  it("litery w roznych kolorach ida osobnymi sciezkami, sasiednie w tym samym kolorze — jedna", () => {
+    const svg = textToSvg(load("sans"), "ABC", 0, [{ fill: "#FF0000" }, { fill: "#ff0000" }, { fill: "#00ff00" }])!;
+    expect(svg.match(/<path /g)).toHaveLength(2);
+    expect(svg).toContain('fill="#ff0000"');
+    expect(svg).toContain('fill="#00ff00"');
+  });
+
+  it("niepoprawny kolor zamienia na czarny zamiast wstawiac go do SVG", () => {
+    const svg = textToSvg(load("sans"), "A", 0, [{ fill: '"/><script>' }])!;
+    expect(svg).toContain('fill="#000000"');
+    expect(svg).not.toContain("script");
+  });
+
+  it("litera z innym zestawem plikow (grubosc) zmienia ksztalt", () => {
+    const regular = load("sans", false);
+    const bold = load("sans", true);
+    const all = textToSvg(regular, "AB")!;
+    const mixed = textToSvg(regular, "AB", 0, [undefined, { fonts: bold }])!;
+    expect(mixed).not.toEqual(all);
+    expect(viewBox(mixed)[2]).toBeGreaterThan(viewBox(all)[2]);
+  });
+});

@@ -36,6 +36,7 @@ import type { RenderOptions } from "@/lib/render";
 import { DEFAULT_SETTINGS, GROUPS, mergeSettings, SMALL_MAX, type Align, type BgMode, type GroupId, type Settings } from "@/lib/settings";
 import {
   hasEmoji,
+  hasLetterColors,
   SAMPLE_SVG,
   sourceFromDataUrl,
   sourceFromFile,
@@ -388,21 +389,23 @@ export default function Generator() {
   );
 
   // Zrodlo z litery / emoji: generowane od nowa po krotkiej przerwie w pisaniu.
-  const emojiRef = useRef<boolean | null>(null);
+  const coloredRef = useRef<boolean | null>(null);
+  // Litery bez wlasnego koloru biora kolor ikonki — tylko wtedy jego zmiana przebudowuje zrodlo.
+  const letterBase = hasLetterColors(textSpec) ? settings.iconColor : null;
   useEffect(() => {
     if (!loaded || sourceTab !== "text") return;
     let cancelled = false;
     const id = window.setTimeout(async () => {
       try {
-        const src = await sourceFromText(textSpec);
+        const src = await sourceFromText(textSpec, letterBase ?? undefined);
         if (cancelled) return;
         setSource(src);
         setError(null);
-        // Emoji maja wlasne kolory — przy przejsciu litera ↔ emoji przelaczamy przebarwienie.
-        const emoji = hasEmoji(src.text!.text);
-        if (emojiRef.current !== emoji) {
-          if (emojiRef.current !== null || !rawSource?.text) setSettings((p) => ({ ...p, tint: !emoji }));
-          emojiRef.current = emoji;
+        // Emoji i kolorowe litery niosa kolory same — przy przejsciu przelaczamy przebarwienie.
+        const colored = hasEmoji(src.text!.text) || hasLetterColors(src.text);
+        if (coloredRef.current !== colored) {
+          if (coloredRef.current !== null || !rawSource?.text) setSettings((p) => ({ ...p, tint: !colored }));
+          coloredRef.current = colored;
         }
       } catch (e) {
         if (!cancelled) setError(errorText(e));
@@ -414,7 +417,7 @@ export default function Generator() {
     };
     // `source` celowo poza zaleznosciami — efekt sam go ustawia.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [textSpec, sourceTab, loaded]);
+  }, [textSpec, sourceTab, loaded, letterBase]);
 
   // Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y. W polach tekstowych zostawiamy natywne cofanie.
   useEffect(() => {
@@ -623,7 +626,16 @@ export default function Generator() {
           </button>
         )}
         {sourceTab === "lucide" && <LucidePicker selected={source?.lucide} onPick={pickLucide} />}
-        {sourceTab === "text" && <TextControls spec={textSpec} onChange={setTextSpec} idPrefix="src" />}
+        {sourceTab === "text" && (
+          <TextControls
+            spec={textSpec}
+            onChange={setTextSpec}
+            idPrefix="src"
+            baseColor={s.iconColor}
+            tileBg={s.bgMode === "transparent" ? undefined : s.bgColor}
+            palette={palette}
+          />
+        )}
         {source && sourceTab === "file" && (
           <p className="text-xs text-muted-foreground">
             {source.kind === "svg" ? t.source.vector : t.source.raster} · {Math.round(source.width)}×{Math.round(source.height)}

@@ -70,23 +70,38 @@ export const loadFonts = (id: FontId, bold: boolean) => Promise.all(fontFiles(id
  * miedzy literami w procentach wysokosci kroju (jak `letter-spacing` w em).
  * Zwraca null, gdy ktoregos znaku nie ma w zadnym pliku albo nic nie widac —
  * wtedy zrodlo powstaje z rastra.
+ *
+ * `styles[i]` (opcjonalnie) zmienia i-ty znak: inny zestaw plikow (grubosc)
+ * i kolor wypelnienia. Sasiednie znaki w tym samym kolorze ida jedna sciezka.
  */
-export function textToSvg(fonts: Font[], text: string, spacing = 0): string | null {
+export interface GlyphStyle {
+  fonts?: Font[];
+  fill?: string;
+}
+
+const HEX = /^#[0-9a-f]{6}$/i;
+
+export function textToSvg(fonts: Font[], text: string, spacing = 0, styles: (GlyphStyle | undefined)[] = []): string | null {
   const SIZE = 1000;
   let x = 0;
-  let d = "";
+  const runs: { fill: string; d: string }[] = [];
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   let prev: { font: Font; glyph: ReturnType<Font["charToGlyph"]> } | null = null;
+  let i = 0;
   for (const ch of text) {
-    const font = fonts.find((f) => f.hasChar(ch));
+    const style = styles[i++];
+    const font = (style?.fonts ?? fonts).find((f) => f.hasChar(ch));
     if (!font) return null;
+    const fill = style?.fill && HEX.test(style.fill) ? style.fill.toLowerCase() : "#000000";
     const scale = SIZE / font.unitsPerEm;
     const glyph = font.charToGlyph(ch);
     if (prev && prev.font === font) x += font.getKerningValue(prev.glyph, glyph) * scale;
     const path = glyph.getPath(x, 0, SIZE);
     const box = path.getBoundingBox();
     if (Number.isFinite(box.x1) && box.x2 > box.x1) {
-      d += path.toPathData(1);
+      const last = runs[runs.length - 1];
+      if (last?.fill === fill) last.d += path.toPathData(1);
+      else runs.push({ fill, d: path.toPathData(1) });
       x0 = Math.min(x0, box.x1);
       y0 = Math.min(y0, box.y1);
       x1 = Math.max(x1, box.x2);
@@ -95,7 +110,8 @@ export function textToSvg(fonts: Font[], text: string, spacing = 0): string | nu
     x += (glyph.advanceWidth ?? 0) * scale + (spacing / 100) * SIZE;
     prev = { font, glyph };
   }
-  if (!d || !(x1 > x0)) return null;
+  if (!runs.length || !(x1 > x0)) return null;
   const r = (v: number) => Math.round(v * 10) / 10;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${r(x0)} ${r(y0)} ${r(x1 - x0)} ${r(y1 - y0)}"><path d="${d}" fill="#000000"/></svg>`;
+  const paths = runs.map((run) => `<path d="${run.d}" fill="${run.fill}"/>`).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${r(x0)} ${r(y0)} ${r(x1 - x0)} ${r(y1 - y0)}">${paths}</svg>`;
 }

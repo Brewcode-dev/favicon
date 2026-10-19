@@ -1,4 +1,4 @@
-import { fontDef, isFontId, loadFonts, textToSvg, type FontId } from "./fonts";
+import { fontDef, isFontId, loadFonts, textToSvg, type FontId, type GlyphStyle } from "./fonts";
 import { AppError } from "./i18n";
 
 export type { FontId } from "./fonts";
@@ -10,18 +10,52 @@ export interface TextSpec {
   bold: boolean;
   /** Odstep miedzy literami w procentach wysokosci kroju; brak = 0 (zapisy sprzed tej opcji). */
   spacing?: number;
+  /**
+   * Styl poszczegolnych znakow, po indeksie znaku w `text` (punkty kodowe).
+   * Brak wpisu = kolor z przebarwienia i grubosc z `bold`.
+   */
+  styles?: (LetterStyle | null)[];
+}
+
+export interface LetterStyle {
+  color?: string;
+  bold?: boolean;
+}
+
+/** Tyle znakow obslugujemy w stylach — pole tekstu i tak przyjmuje najwyzej 8. */
+const MAX_STYLES = 16;
+const HEX = /^#[0-9a-f]{6}$/i;
+
+function normalizeStyles(raw: unknown): (LetterStyle | null)[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw.slice(0, MAX_STYLES).map((v): LetterStyle | null => {
+    if (!v || typeof v !== "object") return null;
+    const st: LetterStyle = {};
+    const { color, bold } = v as LetterStyle;
+    if (typeof color === "string" && HEX.test(color)) st.color = color.toLowerCase();
+    if (typeof bold === "boolean") st.bold = bold;
+    return st.color !== undefined || st.bold !== undefined ? st : null;
+  });
+  while (out.length && out[out.length - 1] === null) out.pop();
+  return out.length ? out : undefined;
 }
 
 /** Spec z localStorage albo pliku projektu: nieznana czcionka → domyslna, odstep w zakresie. */
 export function normalizeTextSpec(raw: TextSpec): TextSpec {
   const spacing = Number(raw.spacing);
-  return {
+  const spec: TextSpec = {
     text: typeof raw.text === "string" ? raw.text : "",
     font: isFontId(raw.font) ? raw.font : "sans",
     bold: raw.bold !== false,
     spacing: Number.isFinite(spacing) ? Math.min(SPACING_MAX, Math.max(SPACING_MIN, spacing)) : 0,
   };
+  const styles = normalizeStyles(raw.styles);
+  if (styles) spec.styles = styles;
+  return spec;
 }
+
+/** Czy choc jedna litera ma wlasny kolor — wtedy tekst niesie kolory sam i przebarwienie jest zbedne. */
+export const hasLetterColors = (spec: TextSpec | undefined) => !!spec?.styles?.some((st) => st?.color);
 
 export const SPACING_MIN = -20;
 export const SPACING_MAX = 50;
@@ -305,16 +339,32 @@ export const hasEmoji = (text: string) => /\p{Extended_Pictographic}/u.test(text
  * Litera albo emoji jako zrodlo. Litery skladamy z konturow czcionki w SVG,
  * wiec favicon.svg zostaje wektorem i jest ostry w kazdym rozmiarze. Emoji
  * (kolorowe glify) i znaki, ktorych nie ma w plikach, rysujemy jak dotad
- * na canvasie. Tekst jest czarny — kolor nadaje przebarwienie.
+ * na canvasie. Tekst jest czarny — kolor nadaje przebarwienie. Gdy litery
+ * maja wlasne kolory (`styles`), SVG niesie je samo, a litery bez koloru
+ * dostaja `baseColor` (kolor ikonki z ustawien).
  */
-export async function sourceFromText(spec: TextSpec): Promise<IconSource> {
+export async function sourceFromText(spec: TextSpec, baseColor = "#000000"): Promise<IconSource> {
   const norm = normalizeTextSpec(spec);
   const text = norm.text.trim() || "A";
+  // Style sa indeksowane po znakach pola tekstu, a przycinamy spacje na poczatku.
+  const lead = [...norm.text].length - [...norm.text.trimStart()].length;
   const out = { ...norm, text };
   const name = `Tekst „${text}”`;
   if (!hasEmoji(text)) {
     try {
-      const svg = textToSvg(await loadFonts(norm.font, norm.bold), text, norm.spacing);
+      const styles = norm.styles?.slice(norm.text.trim() ? lead : 0) ?? [];
+      if (styles.length) out.styles = styles;
+      else delete out.styles;
+      const base = await loadFonts(norm.font, norm.bold);
+      const other = styles.some((st) => st?.bold !== undefined && st.bold !== norm.bold) ? await loadFonts(norm.font, !norm.bold) : base;
+      const multi = hasLetterColors(out);
+      const glyphs = [...text].map(
+        (_, i): GlyphStyle => ({
+          fonts: (styles[i]?.bold ?? norm.bold) === norm.bold ? base : other,
+          fill: multi ? (styles[i]?.color ?? baseColor) : undefined,
+        }),
+      );
+      const svg = textToSvg(base, text, norm.spacing, glyphs);
       if (svg) return { ...(await sourceFromSvgText(svg, name)), text: out };
     } catch {
       // Brak sieci albo uszkodzony plik — zostaje raster z kroju systemowego.
