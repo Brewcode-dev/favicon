@@ -243,7 +243,7 @@ etykiety `traefik.http.routers.favicon.middlewares` obok `favicon-security`.
 ## 7. Aktualizacja
 
 ```bash
-cd brewcode-favicon
+cd /docker/brewcode-favicon
 git pull
 docker compose -f docker-compose.prod.yml up -d --build
 docker image prune -f
