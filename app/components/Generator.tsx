@@ -609,7 +609,8 @@ export default function Generator() {
             type="button"
             onClick={() => fileInput.current?.click()}
             className={cn(
-              "group flex items-center gap-3 rounded-lg border-2 border-dashed p-2.5 text-left transition-colors",
+              // w-full + min-w-0: długa nazwa pliku jest ucinana, zamiast wypychać „Zmień” poza panel.
+              "group flex w-full min-w-0 items-center gap-3 rounded-lg border-2 border-dashed p-2.5 text-left transition-colors",
               dragOver ? "border-primary bg-primary/10" : "border-border hover:border-primary/70",
             )}
           >
@@ -617,10 +618,12 @@ export default function Generator() {
               {source && !source.text && !source.lucide && <SourceThumb src={source} className="max-h-10 max-w-10" />}
             </div>
             <div className="min-w-0 flex-1 text-sm">
-              <div className="truncate font-medium">{source && !source.text && !source.lucide ? source.name : t.source.noFile}</div>
+              <div className="truncate font-medium" title={source && !source.text && !source.lucide ? source.name : undefined}>
+                {source && !source.text && !source.lucide ? source.name : t.source.noFile}
+              </div>
               <div className="text-xs text-muted-foreground">{t.source.dropHint}</div>
             </div>
-            <span className={buttonVariants({ size: "sm", variant: "secondary", className: "group-hover:bg-secondary/80" })}>
+            <span className={buttonVariants({ size: "sm", variant: "secondary", className: "shrink-0 group-hover:bg-secondary/80" })}>
               <ImageUp /> {t.source.change}
             </span>
           </button>
