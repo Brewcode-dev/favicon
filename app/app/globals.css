@@ -13,6 +13,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-selection: var(--selection);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -43,6 +44,9 @@
   --popover-foreground: oklch(0.97 0 0);
   --primary: #f6b900;
   --primary-foreground: oklch(0.205 0 0);
+  /* Zaznaczenie i kontrolki przekształceń na podglądzie: neutralny niebieski jak w Photoshopie
+     (żółty akcent zostaje dla przycisków i marki). */
+  --selection: #2680eb;
   --secondary: oklch(0.305 0 0);
   --secondary-foreground: oklch(0.97 0 0);
   --muted: oklch(0.27 0 0);

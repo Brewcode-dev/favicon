@@ -110,7 +110,7 @@ export default function TransformOverlay({
   };
 
   const handlers = { onPointerMove: move, onPointerUp: end, onPointerCancel: end };
-  const corner = "absolute h-3 w-3 rounded-[3px] border-2 border-primary bg-background shadow";
+  const corner = "absolute h-3 w-3 rounded-[2px] border-[1.5px] border-selection bg-white shadow";
 
   return (
     <div ref={root} className="pointer-events-none absolute inset-0">
@@ -139,8 +139,8 @@ export default function TransformOverlay({
           className={cn(
             "pointer-events-auto absolute inset-0 touch-none rounded-sm",
             selected
-              ? "cursor-move outline-2 outline-primary"
-              : "cursor-pointer hover:outline-1 hover:outline-dashed hover:outline-primary/70",
+              ? "cursor-move outline-1 outline-selection"
+              : "cursor-pointer hover:outline-1 hover:outline-dashed hover:outline-selection/80",
           )}
           onPointerDown={(e) => start(e, "move")}
           {...handlers}
@@ -163,11 +163,11 @@ export default function TransformOverlay({
                 {...handlers}
               />
             ))}
-            <span className="absolute -top-7 left-1/2 h-5 w-px -translate-x-1/2 bg-primary" />
+            <span className="absolute -top-7 left-1/2 h-5 w-px -translate-x-1/2 bg-selection" />
             <span
               aria-label={t.overlay.rotate}
               title={t.overlay.rotateTitle}
-              className="pointer-events-auto absolute -top-9 left-1/2 h-4 w-4 -translate-x-1/2 cursor-grab touch-none rounded-full border-2 border-primary bg-background shadow active:cursor-grabbing"
+              className="pointer-events-auto absolute -top-9 left-1/2 h-4 w-4 -translate-x-1/2 cursor-grab touch-none rounded-full border-[1.5px] border-selection bg-white shadow active:cursor-grabbing"
               onPointerDown={(e) => start(e, "rotate")}
               {...handlers}
             />
