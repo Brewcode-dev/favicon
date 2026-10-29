@@ -1,0 +1,7 @@
+# Brewcode Favicon - zastrzeżenie eksploracji tekstów i danych.
+# Treści, kod i dane tego serwisu nie mogą być używane do trenowania
+# ani zasilania modeli AI (art. 4 dyrektywy (UE) 2019/790).
+# Text and data mining, including AI training, is reserved.
+
+User-Agent: *
+Disallow: /
