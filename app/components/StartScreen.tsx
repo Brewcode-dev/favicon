@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 import { SAMPLE_SVG, sourceFromSvgText, sourceFromText, type IconSource } from "@/lib/source";
 import { cn } from "@/lib/utils";
 import { useT } from "./I18n";
+import CornerLinks from "./CornerLinks";
 import IconCanvas from "./IconCanvas";
 
 const SHAPE: RenderOptions = { mode: "shape" };
@@ -249,6 +250,7 @@ export default function StartScreen({
           </figure>
         </div>
       </main>
+      <CornerLinks className="fixed bottom-6 left-6 z-20" />
     </div>
   );
 }

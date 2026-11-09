@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, Cookie, Shield } from "lucide-react";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
   buildConsent,
   DEFAULT_CONSENT,
@@ -23,7 +23,35 @@ const BTN =
 const PRIMARY = "w-full bg-[#f6b900] py-2.5 text-sm font-bold text-black focus-visible:ring-offset-2 focus-visible:ring-offset-[#f2f0eb]";
 const SECONDARY = "flex-1 py-2 text-xs font-semibold";
 
-export default function ConsentBanner() {
+/** Ponowne otwarcie ustawien z dowolnego miejsca (pasek edytora, ekran startowy). */
+const ConsentCtx = createContext<{ canReopen: boolean; open: () => void } | null>(null);
+
+/**
+ * Przycisk ustawien cookies. Bez GA (brak banera) i przed pierwsza decyzja
+ * nie renderuje niczego — wtedy baner i tak jest na ekranie.
+ */
+export function CookieSettingsButton({ className }: { className?: string }) {
+  const ctx = useContext(ConsentCtx);
+  const t = useT().consent;
+  if (!ctx?.canReopen) return null;
+  return (
+    <button
+      type="button"
+      onClick={ctx.open}
+      title={t.settings}
+      aria-label={t.settings}
+      className={cn(
+        "flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#f2f0eb] text-black shadow-lg transition-colors hover:bg-[#f6b900]",
+        className,
+      )}
+    >
+      <Cookie className="h-4 w-4" />
+    </button>
+  );
+}
+
+/** Baner zgod jako provider: dzieci moga wstawic `CookieSettingsButton` gdzie chca. */
+export default function ConsentBanner({ children }: { children: ReactNode }) {
   const t = useT().consent;
   const [visible, setVisible] = useState(false);
   const [hasConsent, setHasConsent] = useState(false);
@@ -86,19 +114,8 @@ export default function ConsentBanner() {
   }
 
   return (
-    <>
-      {/* Ponowne otwarcie ustawien — nad znaczkiem brewcode (prawy dolny rog). */}
-      {!visible && hasConsent && (
-        <button
-          type="button"
-          onClick={openSettings}
-          title={t.settings}
-          aria-label={t.settings}
-          className="fixed right-[30px] bottom-[84px] z-20 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#f2f0eb] text-black shadow-lg transition-colors hover:bg-[#f6b900]"
-        >
-          <Cookie className="h-4 w-4" />
-        </button>
-      )}
+    <ConsentCtx.Provider value={{ canReopen: !visible && hasConsent, open: openSettings }}>
+      {children}
 
       {visible && (
         <div
@@ -180,7 +197,7 @@ export default function ConsentBanner() {
           </div>
         </div>
       )}
-    </>
+    </ConsentCtx.Provider>
   );
 }
 

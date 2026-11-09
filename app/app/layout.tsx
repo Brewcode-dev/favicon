@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { connection } from "next/server";
-import BrewcodeBadge from "@/components/BrewcodeBadge";
 import ConsentBanner from "@/components/ConsentBanner";
 import GoogleTagHead from "@/components/GoogleTagHead";
 import { I18nProvider } from "@/components/I18n";
@@ -65,11 +64,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full flex-col font-sans">
         <I18nProvider locale={locale}>
-          {children}
-          {/* Bez GA nie ma ciasteczek, wiec nie ma tez o co pytac. */}
-          {isGaId(gaId) && <ConsentBanner />}
+          {/* Bez GA nie ma ciasteczek, wiec nie ma tez o co pytac. Przycisk ustawien
+              i znaczek brewcode wstawia strona (pasek edytora albo lewy dolny rog). */}
+          {isGaId(gaId) ? <ConsentBanner>{children}</ConsentBanner> : children}
         </I18nProvider>
-        <BrewcodeBadge />
       </body>
     </html>
   );

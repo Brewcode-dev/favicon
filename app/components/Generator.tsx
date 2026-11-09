@@ -50,6 +50,7 @@ import {
 } from "@/lib/source";
 import { TARGETS, type Target } from "@/lib/targets";
 import { cn } from "@/lib/utils";
+import CornerLinks from "./CornerLinks";
 import { ColorField, CustomSwatch, Section, Segmented, Slider, Swatch, Toggle } from "./controls";
 import { useErrorText, useLocale, useT } from "./I18n";
 import IconCanvas from "./IconCanvas";
@@ -958,6 +959,8 @@ export default function Generator() {
           {PANELS.map((p) => (
             <RailButton key={p.id} icon={p.icon} label={t.editor.panels[p.id]} active={panel === p.id} onClick={() => setPanel(p.id)} />
           ))}
+          {/* Cookies i znaczek brewcode na dole paska (na telefonie na koncu wiersza). */}
+          <CornerLinks className="ml-auto pl-2 lg:mt-auto lg:ml-0 lg:flex-col lg:pt-3 lg:pl-0" />
         </nav>
 
         <aside className="order-3 flex shrink-0 flex-col bg-card lg:order-none lg:w-[320px] lg:border-r">
@@ -1098,8 +1101,8 @@ export default function Generator() {
             </div>
           )}
 
-          {/* Telefon: pobieranie przyklejone do dolu ekranu; pr-20 robi miejsce na badge. */}
-          <div className="sticky bottom-0 z-10 border-t bg-card p-3 pr-20 sm:hidden [&>button]:w-full">{downloadButton}</div>
+          {/* Telefon: pobieranie przyklejone do dolu ekranu. */}
+          <div className="sticky bottom-0 z-10 border-t bg-card p-3 sm:hidden [&>button]:w-full">{downloadButton}</div>
         </main>
 
         <aside aria-label={t.editor.look} className="hidden w-[320px] shrink-0 flex-col gap-4 overflow-y-auto border-l p-4 pb-24 xl:flex">
