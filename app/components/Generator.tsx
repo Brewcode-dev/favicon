@@ -51,6 +51,7 @@ import {
 import { TARGETS, type Target } from "@/lib/targets";
 import { cn } from "@/lib/utils";
 import CornerLinks from "./CornerLinks";
+import { CoffeeCard } from "./CoffeeLink";
 import { ColorField, CustomSwatch, Section, Segmented, Slider, Swatch, Toggle } from "./controls";
 import { useErrorText, useLocale, useT } from "./I18n";
 import IconCanvas from "./IconCanvas";
@@ -255,6 +256,8 @@ export default function Generator() {
   const [groups, setGroups] = useState<Set<GroupId>>(new Set(ALL_GROUPS));
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
+  // Karta „Przydało się?” po pobraniu ZIP-a; zamknieta nie wraca do konca sesji.
+  const [coffee, setCoffee] = useState<"hidden" | "shown" | "dismissed">("hidden");
   const [dragOver, setDragOver] = useState(false);
   const [previewBg, setPreviewBg] = useState<PreviewBg>("checker");
   const [selected, setSelected] = useState(false);
@@ -489,6 +492,7 @@ export default function Generator() {
         source_type: sourceType(source),
         size_kb: Math.round(blob.size / 1024),
       });
+      setCoffee((c) => (c === "hidden" ? "shown" : c));
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -960,7 +964,7 @@ export default function Generator() {
             <RailButton key={p.id} icon={p.icon} label={t.editor.panels[p.id]} active={panel === p.id} onClick={() => setPanel(p.id)} />
           ))}
           {/* Cookies i znaczek brewcode na dole paska (na telefonie na koncu wiersza). */}
-          <CornerLinks className="ml-auto pl-2 lg:mt-auto lg:ml-0 lg:flex-col lg:pt-3 lg:pl-0" />
+          <CornerLinks variant="rail" className="ml-auto pl-2 lg:mt-auto lg:ml-0 lg:flex-col lg:pt-3 lg:pl-0" />
         </nav>
 
         <aside className="order-3 flex shrink-0 flex-col bg-card lg:order-none lg:w-[320px] lg:border-r">
@@ -1099,6 +1103,13 @@ export default function Generator() {
                 );
               })}
             </div>
+          )}
+
+          {coffee === "shown" && (
+            <CoffeeCard
+              onClose={() => setCoffee("dismissed")}
+              className="fixed right-4 bottom-20 z-30 w-[340px] max-w-[calc(100vw-2rem)] sm:bottom-4"
+            />
           )}
 
           {/* Telefon: pobieranie przyklejone do dolu ekranu. */}

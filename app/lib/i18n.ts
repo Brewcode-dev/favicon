@@ -237,6 +237,13 @@ const pl = {
     progress: (p: string) => `Generowanie ${p}`,
     file: (path: string) => `Pobierz ${path}`,
   },
+  coffee: {
+    link: "Postaw kawę",
+    title: "Przydało się?",
+    text: "Generator działa bez reklam i bez konta. Jeśli paczka ikon oszczędziła Ci popołudnia w edytorze grafiki, postaw kawę.",
+    cta: "Postaw kawę",
+    close: "Zamknij",
+  },
   preview: {
     checker: "Szachownica",
     light: "Jasne",
@@ -520,6 +527,13 @@ const en: Messages = {
     generating: "Generating…",
     progress: (p: string) => `Generating ${p}`,
     file: (path: string) => `Download ${path}`,
+  },
+  coffee: {
+    link: "Buy me a coffee",
+    title: "Found it useful?",
+    text: "The generator has no ads and no sign-up. If the icon pack saved you an afternoon in an image editor, buy me a coffee.",
+    cta: "Buy me a coffee",
+    close: "Close",
   },
   preview: {
     checker: "Checkerboard",
