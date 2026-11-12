@@ -250,7 +250,7 @@ export default function StartScreen({
           </figure>
         </div>
       </main>
-      <CornerLinks variant="pill" className="fixed bottom-6 left-6 z-20" />
+      <CornerLinks variant="corner" className="fixed bottom-6 left-6 z-20" />
     </div>
   );
 }

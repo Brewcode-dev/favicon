@@ -7,27 +7,35 @@ import { useT } from "./I18n";
 
 export const COFFEE_URL = "https://buymeacoffee.com/brwcd";
 
+// Wspolny wyglad przycisku we wszystkich aplikacjach brewcode (kolory Buy Me a Coffee).
+const COFFEE_COLORS = "bg-[#FFDD00] text-black hover:bg-[#FFE84D] shadow-[0_6px_18px_-6px_rgba(0,0,0,0.45)] transition-colors";
+
 /**
- * Dyskretny link „Postaw kawę” obok cookies i znaczka brewcode.
- * `pill` — kapsula jak przycisk cookies (ekran startowy), `rail` — jak przycisk paska paneli (edytor).
+ * „Postaw kawę” obok znaczka brewcode.
+ * `corner` — kapsula 36 px (do 560 px szerokosci okragla 40 px, sama ikona),
+ * `rail` — okragla 40 px w waskim pasku paneli edytora, gdzie kapsula sie nie miesci.
  */
-export function CoffeeLink({ variant, className }: { variant: "pill" | "rail"; className?: string }) {
+export function CoffeeLink({ variant, className }: { variant: "corner" | "rail"; className?: string }) {
   const t = useT().coffee;
   return (
     <a
       href={COFFEE_URL}
       target="_blank"
       rel="noopener noreferrer"
+      title={t.link}
+      aria-label={t.link}
       onClick={() => track("support_click", { place: variant === "rail" ? "editor" : "start" })}
       className={cn(
-        variant === "pill"
-          ? "flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[#f2f0eb] px-3 text-sm font-medium text-black shadow-lg transition-colors hover:bg-[#f6b900]"
-          : "flex min-w-[64px] flex-col items-center gap-1 rounded-lg px-1 py-2 text-center text-[11px] leading-tight text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-primary",
+        "inline-flex shrink-0 items-center justify-center rounded-full",
+        COFFEE_COLORS,
+        variant === "corner"
+          ? "h-9 gap-1.5 px-3.5 text-sm font-semibold max-[560px]:h-10 max-[560px]:w-10 max-[560px]:px-0"
+          : "h-10 w-10",
         className,
       )}
     >
-      <Coffee className={variant === "pill" ? "h-4 w-4" : "h-5 w-5"} aria-hidden />
-      {t.link}
+      <Coffee className="h-4 w-4" aria-hidden />
+      {variant === "corner" && <span className="max-[560px]:hidden">{t.link}</span>}
     </a>
   );
 }
@@ -53,7 +61,7 @@ export function CoffeeCard({ onClose, className }: { onClose: () => void; classN
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => track("support_click", { place: "download" })}
-        className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        className={cn("mt-3 inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold", COFFEE_COLORS)}
       >
         <Coffee className="h-4 w-4" aria-hidden />
         {t.cta}
