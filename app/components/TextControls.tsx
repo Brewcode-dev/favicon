@@ -138,7 +138,7 @@ export default function TextControls({
             {!emoji && (
               <button
                 type="button"
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-primary-text hover:underline"
                 onClick={() => setPicked(sel.length === chars.filter((c) => c.trim()).length ? new Set() : new Set(chars.map((_, i) => i)))}
               >
                 {sel.length === chars.filter((c) => c.trim()).length ? t.source.lettersNone : t.source.lettersAll}

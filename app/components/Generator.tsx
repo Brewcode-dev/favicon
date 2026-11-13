@@ -183,7 +183,7 @@ function RailButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon; 
       onClick={onClick}
       className={cn(
         "flex min-w-[64px] flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-[11px] transition-colors",
-        active ? "bg-secondary text-primary" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+        active ? "bg-secondary text-primary-text" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
       )}
     >
       <Icon className="h-5 w-5" />
@@ -235,10 +235,10 @@ function Tile({ target, src, s }: { target: Target; src: IconSource | null; s: S
     >
       <div className={cn("relative flex h-[104px] w-[104px] items-center justify-center rounded-md", CHECKER)}>
         <IconCanvas size={render} height={renderH} display={display} src={src} settings={s} opts={target.opts} pixelated={long < display} />
-        <Download className="absolute right-1.5 bottom-1.5 h-3.5 w-3.5 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+        <Download className="absolute right-1.5 bottom-1.5 h-3.5 w-3.5 text-primary-text opacity-0 transition-opacity group-hover:opacity-100" />
       </div>
       <span className="text-xs font-medium">{localize(target.label, locale)}</span>
-      <span className="max-w-[120px] truncate font-mono text-[10px] text-muted-foreground group-hover:text-primary">
+      <span className="max-w-[120px] truncate font-mono text-[10px] text-muted-foreground group-hover:text-primary-text">
         {busy ? "…" : name}
       </span>
     </button>
@@ -648,7 +648,7 @@ export default function Generator() {
         {source && sourceTab === "file" && (
           <p className="text-xs text-muted-foreground">
             {source.kind === "svg" ? t.source.vector : t.source.raster} · {Math.round(source.width)}×{Math.round(source.height)}
-            {source.kind === "png" && source.width < 512 && <span className="text-primary"> · {t.source.lowRes}</span>}
+            {source.kind === "png" && source.width < 512 && <span className="text-primary-text"> · {t.source.lowRes}</span>}
           </p>
         )}
       </Section>
@@ -692,7 +692,7 @@ export default function Generator() {
           aside={
             <button
               type="button"
-              className="text-xs text-primary hover:underline"
+              className="text-xs text-primary-text hover:underline"
               onClick={() => patch(() => ({ alignX: "center", alignY: "center", offsetX: 0, offsetY: 0, rotation: 0, flipX: false, flipY: false }))}
             >
               {t.position.center}
@@ -707,7 +707,7 @@ export default function Generator() {
                 {t.align.x[s.alignX]} · {t.align.y[s.alignY]}
               </div>
               {(s.offsetX !== 0 || s.offsetY !== 0) && (
-                <button type="button" className="text-primary hover:underline" onClick={() => patch(() => ({ offsetX: 0, offsetY: 0 }))}>
+                <button type="button" className="text-primary-text hover:underline" onClick={() => patch(() => ({ offsetX: 0, offsetY: 0 }))}>
                   {t.position.clearOffset}
                 </button>
               )}
@@ -840,7 +840,7 @@ export default function Generator() {
           aside={
             <button
               type="button"
-              className="text-xs text-primary hover:underline"
+              className="text-xs text-primary-text hover:underline"
               onClick={() => setGroups(groups.size === ALL_GROUPS.length ? new Set() : new Set(ALL_GROUPS))}
             >
               {groups.size === ALL_GROUPS.length ? t.pack.deselectAll : t.pack.selectAll}
@@ -1056,10 +1056,10 @@ export default function Generator() {
                     <RotateCw />
                   </ToolButton>
                   <ToolButton label={t.tools.flipH} onClick={() => patch((p) => ({ flipX: !p.flipX }))}>
-                    <FlipHorizontalIcon className={s.flipX ? "text-primary" : ""} />
+                    <FlipHorizontalIcon className={s.flipX ? "text-primary-text" : ""} />
                   </ToolButton>
                   <ToolButton label={t.tools.flipV} onClick={() => patch((p) => ({ flipY: !p.flipY }))}>
-                    <FlipVerticalIcon className={s.flipY ? "text-primary" : ""} />
+                    <FlipVerticalIcon className={s.flipY ? "text-primary-text" : ""} />
                   </ToolButton>
                   <span className="mx-1 h-5 w-px bg-border" />
                   <ToolButton

@@ -106,12 +106,12 @@ export default function StartScreen({
       <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
         <div className="flex w-full max-w-[1160px] flex-wrap items-center justify-center gap-14">
           <section className="flex min-w-0 flex-[1_1_440px] flex-col gap-6">
-            <span className="self-start rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 font-mono text-xs text-primary">
+            <span className="self-start rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 font-mono text-xs text-primary-text">
               favicon · iOS · Android · PWA
             </span>
             <h1 className="text-4xl leading-[1.04] font-bold tracking-[-0.035em] sm:text-[56px]">
               {t.start.titleBefore}
-              <span className="text-primary">{t.start.titleAccent}</span>
+              <span className="text-primary-text">{t.start.titleAccent}</span>
               {t.start.titleAfter}
             </h1>
             <p className="max-w-[480px] text-base leading-relaxed text-muted-foreground">{t.start.lead}</p>
@@ -125,14 +125,14 @@ export default function StartScreen({
                 dragOver ? "border-primary bg-primary/10" : "border-muted-foreground/40 bg-card hover:border-primary/70",
               )}
             >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/10 text-primary">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/40 bg-primary/10 text-primary-text">
                 <Upload className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-semibold">{t.start.dropTitle}</span>
                 <span className="block text-[13px] text-muted-foreground">{t.start.dropFormats}</span>
               </span>
-              <span className={buttonVariants({ className: "h-10 rounded-lg px-4 font-semibold group-hover:bg-primary/90" })}>
+              <span className={buttonVariants({ className: "h-10 rounded-lg px-4 font-semibold group-hover:bg-primary-hover" })}>
                 {t.start.choose}
               </span>
             </button>

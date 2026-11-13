@@ -103,7 +103,7 @@ export default function LucidePicker({
               {t.source.lucideCount(shown.length, matches.length)} · {t.source.lucideHint}
             </span>
             {matches.length > limit && (
-              <button type="button" className="text-primary hover:underline" onClick={() => setLimit((l) => l + PAGE * 2)}>
+              <button type="button" className="text-primary-text hover:underline" onClick={() => setLimit((l) => l + PAGE * 2)}>
                 {t.source.lucideMore}
               </button>
             )}

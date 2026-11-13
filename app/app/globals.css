@@ -13,6 +13,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-text: var(--primary-text);
   --color-selection: var(--selection);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -32,7 +34,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Palety jak w brewcode-pdf-tool (.dark), primary w kolorze marki z badge'a. */
+/*
+ * Palety jak w brewcode-pdf-tool (.dark). Primary to kolor tego narzędzia:
+ * fiolet. Żółty #f6b900 zostaje dla marki (odznaka b./, baner zgód)
+ * i dla Vectorizera — każde narzędzie brewcode ma własny akcent.
+ */
 :root {
   --radius: 0.625rem;
   color-scheme: dark;
@@ -42,10 +48,15 @@
   --card-foreground: oklch(0.97 0 0);
   --popover: oklch(0.255 0 0);
   --popover-foreground: oklch(0.97 0 0);
-  --primary: #f6b900;
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: #a053fd;
+  /* napis na fiolecie: oklch(0.205) dawał 4,4:1, ciemniejszy trzyma AA */
+  --primary-foreground: oklch(0.13 0 0);
+  /* hover jaśniejszy, nie bg-primary/90 — przyciemnienie zjadało kontrast napisu */
+  --primary-hover: #ad74ff;
+  /* tekst w kolorze akcentu: #a053fd na karcie i secondary ma poniżej 4,5:1 */
+  --primary-text: #b98bff;
   /* Zaznaczenie i kontrolki przekształceń na podglądzie: neutralny niebieski jak w Photoshopie
-     (żółty akcent zostaje dla przycisków i marki). */
+     (fioletowy akcent zostaje dla przycisków, żółty dla marki). */
   --selection: #2680eb;
   --secondary: oklch(0.305 0 0);
   --secondary-foreground: oklch(0.97 0 0);
