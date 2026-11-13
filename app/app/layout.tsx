@@ -7,6 +7,7 @@ import GoogleTagHead from "@/components/GoogleTagHead";
 import { I18nProvider } from "@/components/I18n";
 import { isGaId } from "@/lib/analytics";
 import { MESSAGES, pickLocale } from "@/lib/i18n";
+import { APPLE_STARTUP_IMAGES } from "@/lib/startup-images";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
     },
     manifest: "/site.webmanifest",
-    appleWebApp: { title: "favicon" },
+    appleWebApp: { title: "favicon", startupImage: APPLE_STARTUP_IMAGES },
     other: { "msapplication-config": "/browserconfig.xml", "msapplication-TileColor": "#1b2029" },
   };
 }

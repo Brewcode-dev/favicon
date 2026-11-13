@@ -934,7 +934,7 @@ export default function Generator() {
 
       <header className="flex flex-wrap items-center gap-2 border-b bg-card px-3 py-2 sm:gap-3 sm:px-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/favicon.svg" alt="" className="h-8 w-8" />
+        <img src="/icons/icon.svg" alt="" className="h-8 w-8" />
         <span className="mr-1 hidden text-[15px] font-semibold sm:inline">{t.header.title}</span>
         <div className="flex h-10 min-w-0 items-center rounded-lg border bg-secondary/40">
           <button

@@ -93,7 +93,7 @@ export default function StartScreen({
     <div className="flex min-h-screen flex-1 flex-col">
       <header className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/favicon.svg" alt="" className="h-8 w-8" />
+        <img src="/icons/icon.svg" alt="" className="h-8 w-8" />
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-semibold">{t.header.title}</div>
           <div className="text-xs text-muted-foreground">{t.start.tagline}</div>
