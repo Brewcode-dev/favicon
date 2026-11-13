@@ -40,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     manifest: "/site.webmanifest",
     appleWebApp: { title: "favicon" },
-    other: { "msapplication-config": "/browserconfig.xml", "msapplication-TileColor": "#f6b900" },
+    other: { "msapplication-config": "/browserconfig.xml", "msapplication-TileColor": "#1b2029" },
   };
 }
 

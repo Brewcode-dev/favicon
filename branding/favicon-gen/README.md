@@ -23,8 +23,12 @@ Ikony jasne są bez kanału alfa, więc przechodzą walidację App Store Connect
 ## macOS
 Katalog `macos/AppIcon.appiconset` podmień w `Assets.xcassets` projektu macOS.
 
+## Ekrany startowe iOS
+Katalog `splash/` skopiuj do katalogu publicznego strony. Tagi `apple-touch-startup-image`
+z `head.html` wybierają właściwy plik po rozmiarze ekranu (orientacja pionowa).
+
 ## Ponowne wygenerowanie
-`brewcode-favicon.json` zawiera wszystkie ustawienia i plik źródłowy. Wczytaj go w generatorze
+`favicon-icons.json` zawiera wszystkie ustawienia i plik źródłowy. Wczytaj go w generatorze
 („Wczytaj” w sekcji Projekt albo przeciągnij plik na okno), popraw i pobierz paczkę od nowa.
 
 ## Ikony ogólne
