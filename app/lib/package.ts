@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { AppError, MESSAGES, type Locale } from "./i18n";
+import { baseFileName } from "./filename";
 import { canvasToPng, encodeIco, encodeOpaquePng } from "./encode";
 import { buildSvg, renderCanvas } from "./render";
 import { GROUPS, mergeSettings, type GroupId, type Settings } from "./settings";
@@ -21,7 +22,7 @@ export async function exportTarget(target: Target, src: IconSource | null, s: Se
   return target.opts.opaque ? encodeOpaquePng(canvas) : canvasToPng(canvas);
 }
 
-function readme(groups: Set<GroupId>, locale: Locale): string {
+function readme(groups: Set<GroupId>, locale: Locale, projectFile: string): string {
   const r = MESSAGES[locale].readme;
   const lines = [r.title, ""];
   const section = (text: string[]) => lines.push(...text, "");
@@ -30,7 +31,7 @@ function readme(groups: Set<GroupId>, locale: Locale): string {
   if (groups.has("ios")) section(r.ios);
   if (groups.has("macos")) section(r.macos);
   if (groups.has("splash")) section(r.splash);
-  section(r.regenerate);
+  section(r.regenerate(projectFile));
   if (groups.has("icons")) section(r.icons);
   return lines.join("\n");
 }
@@ -50,8 +51,9 @@ export async function buildPackage(
     onProgress?.(++done, targets.length);
   }
   for (const f of textFiles(groups, s)) zip.file(f.path, f.content);
-  zip.file(PROJECT_FILE, JSON.stringify(projectToJson(s, groups, src), null, 2) + "\n");
-  zip.file("README.md", readme(groups, locale));
+  const projectFile = projectFileName(s);
+  zip.file(projectFile, JSON.stringify(projectToJson(s, groups, src), null, 2) + "\n");
+  zip.file("README.md", readme(groups, locale, projectFile));
   return zip.generateAsync({ type: "blob", compression: "DEFLATE" });
 }
 
@@ -68,7 +70,8 @@ export function downloadBlob(blob: Blob, name: string) {
 
 /* ─────────────────────── projekt: zapis i odczyt JSON ─────────────────────── */
 
-export const PROJECT_FILE = "brewcode-favicon.json";
+export const packageFileName = (s: Settings) => `${baseFileName(s)}.zip`;
+export const projectFileName = (s: Settings) => `${baseFileName(s)}.json`;
 const PROJECT_FORMAT = "brewcode-favicon";
 
 export interface ProjectJson {

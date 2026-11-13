@@ -231,6 +231,8 @@ const pl = {
     load: "Wczytaj",
     note: "Plik .json z ustawieniami i ikoną źródłową — ten sam trafia do każdej paczki ZIP. Można go też upuścić na okno.",
     resetDefaults: "Przywróć domyślne ustawienia",
+    fileName: "Nazwa plików",
+    fileNameHint: (zip: string, json: string) => `Paczka: ${zip}, ustawienia: ${json}`,
   },
   download: {
     generating: "Generowanie…",
@@ -317,9 +319,9 @@ const pl = {
       "Katalog `splash/` skopiuj do katalogu publicznego strony. Tagi `apple-touch-startup-image`",
       "z `head.html` wybierają właściwy plik po rozmiarze ekranu (orientacja pionowa).",
     ],
-    regenerate: [
+    regenerate: (file: string) => [
       "## Ponowne wygenerowanie",
-      "`brewcode-favicon.json` zawiera wszystkie ustawienia i plik źródłowy. Wczytaj go w generatorze",
+      `\`${file}\` zawiera wszystkie ustawienia i plik źródłowy. Wczytaj go w generatorze`,
       "(„Wczytaj” w sekcji Projekt albo przeciągnij plik na okno), popraw i pobierz paczkę od nowa.",
     ],
     icons: ["## Ikony ogólne", "`icons/` — PNG 16–1024 px i wektorowy `icon.svg`."],
@@ -522,6 +524,8 @@ const en: Messages = {
     load: "Load",
     note: "A .json file with the settings and source icon — the same one is included in every ZIP package. You can also drop it onto the window.",
     resetDefaults: "Restore default settings",
+    fileName: "File name",
+    fileNameHint: (zip: string, json: string) => `Package: ${zip}, settings: ${json}`,
   },
   download: {
     generating: "Generating…",
@@ -607,9 +611,9 @@ const en: Messages = {
       "Copy the `splash/` directory into your site's public directory. The `apple-touch-startup-image` tags",
       "from `head.html` pick the right file by screen size (portrait orientation).",
     ],
-    regenerate: [
+    regenerate: (file: string) => [
       "## Regenerating",
-      "`brewcode-favicon.json` holds all settings and the source file. Load it in the generator",
+      `\`${file}\` holds all settings and the source file. Load it in the generator`,
       "(“Load” in the Project section, or drop the file onto the window), adjust and download the package again.",
     ],
     icons: ["## Generic icons", "`icons/` — PNG 16–1024 px and a vector `icon.svg`."],

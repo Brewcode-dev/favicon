@@ -76,7 +76,7 @@ pnpm dev                        # http://localhost:3000
 | **Tryb ciemny** | wariant `favicon.svg` dla `prefers-color-scheme: dark` (tło i kolor ikonki); kolor ikonki trafia też do ciemnej ikony iOS 18 |
 | **Aplikacja** | nazwa, nazwa krótka i theme color — trafiają do `site.webmanifest` i `head.html` |
 | **Paczka** | które grupy plików mają się znaleźć w ZIP-ie |
-| **Projekt** | zapis i wczytanie wszystkich ustawień razem z ikoną źródłową (`brewcode-favicon.json`) |
+| **Projekt** | zapis i wczytanie wszystkich ustawień razem z ikoną źródłową; nazwę pliku `.json` i paczki `.zip` ustawia pole „Nazwa plików” (domyślnie z nazwy aplikacji) |
 
 Każdy suwak ma obok pole, w które można wpisać wartość z palca (przecinek też
 działa, wartość spoza zakresu jest przycinana). Strzałki góra/dół zmieniają ją
@@ -88,7 +88,7 @@ podglądem. Zmiany w odstępie krótszym niż 0,4 s łączą się w jeden krok, 
 przeciągnięcie suwaka albo ikonki to jedno cofnięcie, a nie sto. Historia
 obejmuje ustawienia (nie wymianę pliku źródłowego), do 100 kroków.
 
-**Plik projektu:** `brewcode-favicon.json` zapisuje ustawienia, wybrane grupy
+**Plik projektu:** `<nazwa>.json` (np. `moja-aplikacja.json`) zapisuje ustawienia, wybrane grupy
 i ikonę źródłową. Ten sam plik jest w każdej paczce ZIP — żeby poprawić ikony po
 czasie, wystarczy go wczytać („Wczytaj” albo upuszczenie na okno). Nieznane pola
 są pomijane, brakujące uzupełniane domyślnymi.
@@ -139,7 +139,7 @@ pliki aplikacji natywnych — w katalogach platform.
 | **Windows** | `mstile-70x70.png`, `-150x150.png`, `-310x310.png`, `browserconfig.xml` |
 | **Ekrany startowe iOS** | `splash/apple-splash-{w}x{h}.png` — 19 urządzeń (iPhone SE → 16 Pro Max, iPady), orientacja pionowa, tagi `apple-touch-startup-image` w `head.html` |
 | **Ikony ogólne** | `icons/icon-16x16.png` … `icon-1024x1024.png`, `icons/icon.svg` |
-| zawsze | `head.html` (tagi `<link>`/`<meta>` do wklejenia), `README.md` z instrukcją instalacji, `brewcode-favicon.json` (projekt do ponownego wczytania) |
+| zawsze | `head.html` (tagi `<link>`/`<meta>` do wklejenia), `README.md` z instrukcją instalacji, `<nazwa>.json` (projekt do ponownego wczytania) |
 
 Pełna paczka to 97 obrazów plus pliki konfiguracyjne.
 

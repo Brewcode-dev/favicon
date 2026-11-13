@@ -31,7 +31,8 @@ import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { track } from "@/lib/analytics";
 import { localize } from "@/lib/i18n";
-import { buildPackage, downloadBlob, exportTarget, PROJECT_FILE, projectFromJson, projectToJson } from "@/lib/package";
+import { baseFileName } from "@/lib/filename";
+import { buildPackage, downloadBlob, exportTarget, packageFileName, projectFileName, projectFromJson, projectToJson } from "@/lib/package";
 import type { RenderOptions } from "@/lib/render";
 import { DEFAULT_SETTINGS, GROUPS, mergeSettings, SMALL_MAX, type Align, type BgMode, type GroupId, type Settings } from "@/lib/settings";
 import {
@@ -484,7 +485,7 @@ export default function Generator() {
     setProgress(t.download.generating);
     try {
       const blob = await buildPackage(groups, source, settings, locale, (done, total) => setProgress(`${done}/${total}`));
-      downloadBlob(blob, "icons.zip");
+      downloadBlob(blob, packageFileName(settings));
       track("download_package", {
         file_count: fileCount,
         group_count: groups.size,
@@ -873,6 +874,20 @@ export default function Generator() {
           <ColorField swatches={palette} label={t.app.themeColor} value={s.themeColor} onChange={(v) => set("themeColor", v)} />
         </Section>
         <Section title={t.project.title}>
+          <div className="space-y-1.5">
+            <Label htmlFor="file-name" className="font-normal">
+              {t.project.fileName}
+            </Label>
+            <Input
+              id="file-name"
+              value={s.fileName}
+              maxLength={80}
+              placeholder={baseFileName({ fileName: "", appName: s.appName })}
+              spellCheck={false}
+              onChange={(e) => set("fileName", e.target.value)}
+            />
+            <p className="text-xs break-all text-muted-foreground">{t.project.fileNameHint(packageFileName(s), projectFileName(s))}</p>
+          </div>
           <div className="flex gap-2">
             <Button
               type="button"
@@ -882,7 +897,7 @@ export default function Generator() {
               onClick={() => {
                 downloadBlob(
                   new Blob([JSON.stringify(projectToJson(settings, groups, rawSource), null, 2)], { type: "application/json" }),
-                  PROJECT_FILE,
+                  projectFileName(settings),
                 );
                 track("download_project", { source_type: sourceType(source) });
               }}
@@ -897,7 +912,7 @@ export default function Generator() {
           <button
             type="button"
             className="text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setSettings({ ...defaults, appName: s.appName, shortName: s.shortName })}
+            onClick={() => setSettings({ ...defaults, fileName: s.fileName, appName: s.appName, shortName: s.shortName })}
           >
             {t.project.resetDefaults}
           </button>

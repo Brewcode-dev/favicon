@@ -57,6 +57,8 @@ export interface Settings {
   darkBgColor: string;
   darkIconColor: string;
 
+  /** Nazwa paczki ZIP i pliku projektu bez rozszerzenia; pusta = z nazwy aplikacji. */
+  fileName: string;
   appName: string;
   shortName: string;
   themeColor: string;
@@ -96,6 +98,7 @@ export const DEFAULT_SETTINGS: Settings = {
   darkEnabled: false,
   darkBgColor: "#1f1f1f",
   darkIconColor: "#f6b900",
+  fileName: "",
   appName: "Moja aplikacja",
   shortName: "Aplikacja",
   themeColor: "#f59e0b",
